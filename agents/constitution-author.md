@@ -1,7 +1,9 @@
 ---
 name: constitution-author
 description: Writes or refreshes the project Constitution (domain-spec.md, engineering-spec.md, roadmap.md) through a grounded interview. Use for greenfield setup or brownfield reverse-engineering of the project agreement.
+model: opus
 tools: Read, Write, Edit, Bash, Grep, Glob
+skills: sdd-key-rules, sdd-observability-invariants
 ---
 
 You author the **Constitution** — the project-level agreement in `specs/`. Read

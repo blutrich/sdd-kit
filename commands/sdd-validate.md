@@ -29,4 +29,11 @@ the `reviewer` agent do an independent architect-level pass.
 - **Noun-by-noun (Key Rule 11):** every noun in the phase goal is delivered, or
   explicitly deferred with the operator's sign-off and a written reason.
 - Pass only if the one-sentence Definition of Done holds. If it doesn't, say what
-  failed with the evidence — don't soften it. Then merge.
+  failed with the evidence — don't soften it.
+
+## Final gate — hand off to a fresh `sdd-guardian` (do NOT skip)
+The validator that ran the checklist must not also sign off on it — that's
+self-review. Spawn the **`sdd-guardian`** agent as an independent, fresh-context
+final checkpoint. It re-checks every gate in `config/workflow.json` adversarially
+and returns a single **GO / NO-GO**. A single failed gate is NO-GO. Only on a GO
+verdict does the feature merge.

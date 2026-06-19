@@ -64,9 +64,10 @@ flowchart TD
     GATE2 -->|Yes| IMPL["/sdd-implement<br/>→ implementer"]
 
     IMPL --> VAL
-    VAL --> DONE{"Real-data DoD met?<br/>≥1 test not mocking both ends?<br/>every goal noun delivered?"}
-    DONE -->|No| FIX["⛔ Report what failed<br/>with evidence — don't soften"]
-    DONE -->|Yes| MERGE([Merge]) --> REPLAN
+    VAL --> GUARD["🛡️ sdd-guardian<br/>fresh, independent agent —<br/>re-checks every gate adversarially"]
+    GUARD --> DONE{"GO?<br/>Real-data DoD met?<br/>≥1 test not mocking both ends?<br/>every goal noun delivered?"}
+    DONE -->|"NO-GO"| FIX["⛔ Report each failed gate<br/>with evidence — don't soften"]
+    DONE -->|"GO"| MERGE([Merge]) --> REPLAN
 ```
 
 **The fail-closed gates** (the whole point):
@@ -113,6 +114,27 @@ When installed as a plugin, commands are namespaced: `/sdd-kit:sdd-plan`, etc.
 
 ---
 
+## The agent team (best model per task)
+
+The machine-readable flow, gates, models, and skill bindings live in
+[config/workflow.json](config/workflow.json) — the router and guardian read it.
+
+| Agent | Phase | Model | Why this model | Skills it carries |
+|---|---|---|---|---|
+| `constitution-author` | Constitution | **opus** | synthesizes the whole project agreement — highest leverage | key-rules, observability-invariants |
+| `feature-planner` | Plan | **opus** | grounding + interview + spec design need judgment | grounding-discipline, key-rules, observability-invariants |
+| `implementer` | Implement | **sonnet** | executes an already-reviewed, grounded plan — speed in the loop | grounding-discipline, observability-invariants |
+| `reviewer` | Validate | **opus** | independent architect-level drift/grounding review | key-rules, grounding-discipline |
+| `validator` | Validate | **opus** | rigor; forces every failure/unknown path | key-rules, observability-invariants |
+| `sdd-guardian` | Final gate | **opus** | adversarial GO/NO-GO — a **separate** agent from the validator, never self-review | key-rules, grounding-discipline, observability-invariants |
+| `replanner` | Replan | **opus** | folds learnings back into the constitution — compounds across features | key-rules |
+
+Every judgment/correctness role runs on opus; only the implementer runs on
+sonnet. The **guardian is deliberately a different agent** from the validator so
+the final sign-off is independent, not the checker grading its own work.
+
+---
+
 ## The 14 Key Rules (the non-negotiables)
 
 Full annotated list: [skills/sdd-key-rules](skills/sdd-key-rules/SKILL.md).
@@ -139,15 +161,24 @@ ends). They are the cheapest insurance against the most expensive class of bug.
 sdd-kit/
 ├── .claude-plugin/
 │   └── plugin.json                 # plugin manifest (identity)
+├── config/
+│   └── workflow.json               # machine-readable flow: phases, agents, models, GATES
 ├── agents/                         # phase specialists
 │   ├── constitution-author.md      #   writes the 3 Constitution files
 │   ├── feature-planner.md          #   writes the 3 feature-spec files
 │   ├── implementer.md              #   executes plan.md, no merge
 │   ├── validator.md                #   runs validation.md, forces failure paths
 │   ├── reviewer.md                 #   architect-level drift/grounding review
+│   ├── sdd-guardian.md             #   final adversarial GO/NO-GO gate (independent)
 │   └── replanner.md                #   folds learnings back into the constitution
 ├── commands/                       # the lifecycle: /sdd-constitution … /sdd-replan
 │   └── sdd-{constitution,plan,implement,validate,replan}.md
+├── hooks/                          # deterministic gate enforcement
+│   ├── hooks.json                  #   SessionStart context + PreToolUse spec-before-code guard
+│   └── README.md
+├── scripts/                        # hook implementations (Python stdlib, no deps)
+│   ├── inject_constitution.py
+│   └── spec_before_code_guard.py
 ├── skills/                         # durable rules + the brain
 │   ├── sdd-router/                 #   THE entry point — routes intent, fails closed
 │   ├── sdd-key-rules/              #   the 14 invariants

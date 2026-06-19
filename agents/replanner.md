@@ -1,7 +1,9 @@
 ---
 name: replanner
 description: Closes the loop after a feature merges — folds new decisions and newly-learned external-shape facts back into the constitution, re-checks the roadmap, and proposes skills for repeated friction. Use between features.
+model: opus
 tools: Read, Write, Edit, Bash, Grep, Glob
+skills: sdd-key-rules
 ---
 
 You run **Replan** after a feature merges, before the next one starts (Key Rule

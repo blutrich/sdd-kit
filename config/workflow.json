@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "sdd",
+  "version": "0.1.0",
+  "description": "Machine-readable Spec-Driven Development flow: phases, the agent + model that run each, the artifacts they produce, and the fail-closed gates between them. The sdd-router skill reads this to route; the sdd-guardian agent reads the gates to give a final GO/NO-GO.",
+
+  "models": {
+    "judgment": "opus",
+    "execution": "sonnet",
+    "comment": "Best model per task: every judgment/correctness role — constitution, plan, review, validate, replan, and the final guardian gate — runs on opus. Only the implementer runs on sonnet, because it executes an already-reviewed, grounded plan and benefits from speed in the tight implement→validate loop. The guardian is a SEPARATE agent from the validator on purpose (independent second judgment, not self-review). Override per-project — SDD is agent- and model-agnostic."
+  },
+
+  "phases": [
+    {
+      "id": "constitution",
+      "command": "/sdd-constitution",
+      "agent": "constitution-author",
+      "model": "opus",
+      "skills": ["sdd-key-rules", "sdd-observability-invariants"],
+      "produces": ["specs/domain-spec.md", "specs/engineering-spec.md", "specs/roadmap.md"],
+      "entry_gates": [],
+      "exit_gates": ["constitution_complete"],
+      "next": "plan"
+    },
+    {
+      "id": "plan",
+      "command": "/sdd-plan",
+      "agent": "feature-planner",
+      "model": "opus",
+      "skills": ["sdd-grounding-discipline", "sdd-key-rules", "sdd-observability-invariants"],
+      "produces": ["specs/<feature>/requirements.md", "specs/<feature>/plan.md", "specs/<feature>/validation.md"],
+      "entry_gates": ["constitution_complete"],
+      "exit_gates": ["spec_grounded", "spec_committed"],
+      "next": "implement"
+    },
+    {
+      "id": "implement",
+      "command": "/sdd-implement",
+      "agent": "implementer",
+      "model": "sonnet",
+      "skills": ["sdd-grounding-discipline", "sdd-observability-invariants"],
+      "produces": ["code", "tests"],
+      "entry_gates": ["spec_before_code", "spec_grounded"],
+      "exit_gates": [],
+      "next": "validate"
+    },
+    {
+      "id": "validate",
+      "command": "/sdd-validate",
+      "agent": "validator",
+      "model": "opus",
+      "skills": ["sdd-key-rules", "sdd-observability-invariants"],
+      "produces": ["validation-evidence"],
+      "entry_gates": [],
+      "exit_gates": ["real_data_done", "failure_unknown_verified"],
+      "review": { "agent": "reviewer", "model": "opus" },
+      "next": "guardian"
+    },
+    {
+      "id": "guardian",
+      "command": "/sdd-validate",
+      "agent": "sdd-guardian",
+      "model": "opus",
+      "skills": ["sdd-key-rules", "sdd-grounding-discipline", "sdd-observability-invariants"],
+      "produces": ["go-no-go-verdict"],
+      "entry_gates": [],
+      "exit_gates": ["all_gates_pass"],
+      "comment": "The final fail-closed checkpoint before merge. Independently re-checks every gate; a single failed gate is NO-GO.",
+      "next": "merge"
+    },
+    {
+      "id": "replan",
+      "command": "/sdd-replan",
+      "agent": "replanner",
+      "model": "opus",
+      "skills": ["sdd-key-rules"],
+      "produces": ["constitution-updates", "roadmap-updates", "skill-proposals"],
+      "entry_gates": [],
+      "exit_gates": [],
+      "next": "plan"
+    }
+  ],
+
+  "gates": {
+    "spec_before_code": {
+      "rule": 1,
+      "assert": "A reviewed, committed feature spec (requirements.md + plan.md + validation.md) exists before any implementation.",
+      "on_fail": "Route to /sdd-plan. Do not write code."
+    },
+    "spec_grounded": {
+      "rule": 12,
+      "assert": "Every data-dependent decision (parser, schema, mapping, anything consuming an external shape) cites a REAL captured sample, not an imagined one.",
+      "on_fail": "Stop. Capture the real sample (real API call / DB row / log line / file bytes) and cite it before writing the decision.",
+      "skill": "sdd-grounding-discipline"
+    },
+    "spec_committed": {
+      "rule": 4,
+      "assert": "The three feature-spec files are committed before implementation begins.",
+      "on_fail": "Commit the spec first."
+    },
+    "constitution_complete": {
+      "assert": "domain-spec has the Core Workflow + Observable Lifecycle + 'Unknown is never recorded as success' invariant; engineering-spec has the observability seam + explicit external-dependency failure modes; every roadmap phase has a goal AND a 'What this gives users/team/system' line.",
+      "on_fail": "Fill the missing section before proceeding.",
+      "skill": "sdd-observability-invariants"
+    },
+    "real_data_done": {
+      "rule": 13,
+      "assert": "At least one test exercises real collaborators (does not mock both ends) AND the feature was proven once end-to-end against the real running system with the artifact inspected and captured.",
+      "on_fail": "NO-GO. 'Built and tested' is not 'works' — run it for real and inspect the artifact."
+    },
+    "failure_unknown_verified": {
+      "assert": "Every signal's failure/unknown path was forced and confirmed to record unknown/failed — never collapsed into ok/empty/done/delivered.",
+      "on_fail": "NO-GO. A default that reads as a fact is the most common way a system lies to its operators.",
+      "skill": "sdd-observability-invariants"
+    },
+    "noun_by_noun": {
+      "rule": 11,
+      "assert": "Every noun in the phase goal sentence is delivered, or explicitly deferred with the operator's sign-off and a written reason.",
+      "on_fail": "NO-GO. A noun the goal named and quietly dropped is a gap."
+    },
+    "all_gates_pass": {
+      "assert": "spec_before_code AND spec_grounded AND real_data_done AND failure_unknown_verified AND noun_by_noun all hold.",
+      "on_fail": "NO-GO. Report each failed gate with evidence; do not soften.",
+      "owner": "sdd-guardian"
+    }
+  }
+}

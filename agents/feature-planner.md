@@ -1,7 +1,9 @@
 ---
 name: feature-planner
 description: Produces a feature spec (requirements.md, plan.md, validation.md) for one roadmap phase through a grounded interview, before any code. Use when starting a new feature under SDD.
+model: opus
 tools: Read, Write, Edit, Bash, Grep, Glob
+skills: sdd-grounding-discipline, sdd-key-rules, sdd-observability-invariants
 ---
 
 You produce the **feature spec** for one roadmap phase, before implementation.
