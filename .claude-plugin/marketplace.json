@@ -1,0 +1,13 @@
+{
+  "name": "sdd-kit",
+  "owner": {
+    "name": "Ofer Blutrich & Tsahi (Isaac Zeevi)"
+  },
+  "plugins": [
+    {
+      "name": "sdd-kit",
+      "source": "./",
+      "description": "Repo-agnostic Spec-Driven Development harness: a Constitution + per-feature Plan/Implement/Validate/Replan loop with grounding and observability discipline. Write specs before code; ground every data-dependent decision in real samples; prove 'done' on real data, not mocks."
+    }
+  ]
+}
