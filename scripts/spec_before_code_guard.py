@@ -86,19 +86,28 @@ def main() -> int:
         f"and ground any data-dependent decision in a real sample (KR12)."
     )
 
-    if os.environ.get("SDD_GUARD", "").lower() == "block":
+    # Fail closed by DEFAULT. We only reach here when the project already has a
+    # Constitution, the edit targets real implementation code, and the branch has
+    # no feature spec — exactly the condition SDD forbids. The kit's point is
+    # enforcement, not advice, so block unless the operator explicitly downgrades.
+    # SDD_GUARD=warn → advisory; SDD_GUARD=off → silent.
+    mode = os.environ.get("SDD_GUARD", "block").lower()
+    if mode in ("off", "0", "false", "none"):
+        return 0
+    if mode in ("warn", "advisory", "soft"):
+        out = {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "additionalContext": "⚠️ " + reason + " (advisory — SDD_GUARD=warn)",
+            }
+        }
+    else:  # "block" (default) or anything unrecognized → fail closed
         out = {
             "hookSpecificOutput": {
                 "hookEventName": "PreToolUse",
                 "permissionDecision": "deny",
-                "permissionDecisionReason": reason,
-            }
-        }
-    else:
-        out = {
-            "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
-                "additionalContext": "⚠️ " + reason + " (advisory; set SDD_GUARD=block to enforce.)",
+                "permissionDecisionReason": reason
+                + " (Set SDD_GUARD=warn for advisory, or SDD_GUARD=off to disable.)",
             }
         }
     print(json.dumps(out))

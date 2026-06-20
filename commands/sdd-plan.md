@@ -25,8 +25,18 @@ constitution is up to date. Create the spec dir + branch:
 
 ## Hard gates
 - **Ground first (Key Rule 12).** If the feature parses/stores/reacts to any
-  external shape, capture a real sample and cite it in the spec *before* writing
-  the decision. See `skills/sdd-grounding-discipline`.
+  external shape, capture a real sample **to a committed file** under
+  `specs/<feature>/samples/` and cite the capture command in requirements.md
+  *before* writing the decision. See `skills/sdd-grounding-discipline`.
+- **Enumerate deliverables (Key Rule 11).** requirements.md lists each noun in
+  the phase goal as an explicit deliverable checklist — the guardian checks that
+  list, not re-tokenized prose.
 - **Recommendation per question (Key Rule 14).** Never a neutral menu.
-- Review all three files with the operator, then **commit the spec before
-  implementation** (Key Rule 4). No code yet.
+
+## Exit gate — independent plan review (before any code)
+Hand the three files to a fresh **`plan-gap-reviewer`** (it does NOT see your
+rationale). It hunts for ungrounded decisions, missing edge cases/states, dropped
+observability, scope drift, and validation↔plan mismatches *while they're still
+cheap to fix*. On **REVISE**, fix the named gaps in the spec and re-review; only on
+**PROCEED** do you continue. Then review with the operator and **commit the spec
+before implementation** (Key Rule 4). No code yet.

@@ -3,6 +3,19 @@
 > What to build and why. The agent reads this to understand intent and
 > constraints.
 
+## Deliverables (the goal, enumerated — KR11)
+The phase goal sentence is a contract; list each noun in it as an explicit
+deliverable here so the guardian checks a real list, not re-tokenized prose.
+- [ ] <deliverable 1 — a noun from the goal>
+- [ ] <deliverable 2>
+- [ ] <…>
+
+## Grounding Samples (KR12)
+Every data-dependent decision below must point to a **real captured sample**
+committed under `specs/<feature>/samples/`, with the command that produced it.
+- `samples/<name>` — captured via `<exact command/query>` on `<date>`.
+- <… or, if uncapturable: name the decision and mark it deferred in Open Questions.>
+
 ## Scope
 What this feature covers. Use tables for structured data (fields, endpoints,
 content sections, states).

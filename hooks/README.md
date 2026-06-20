@@ -7,21 +7,23 @@ All hooks **fail open**: any internal error exits 0 and never breaks your sessio
 | Hook | Event | What it does |
 |---|---|---|
 | `inject_constitution.py` | `SessionStart` | If the project has a Constitution (`specs/domain-spec.md`), injects a short pointer to it + the next unchecked roadmap phase, so the agent starts grounded. Silent when there's no Constitution. |
-| `spec_before_code_guard.py` | `PreToolUse` (Edit/Write/MultiEdit) | The "spec before code" gate (Key Rule 1). When about to edit *implementation code* on a branch with no `specs/<branch>/requirements.md`, it nudges you to write the spec first. |
+| `spec_before_code_guard.py` | `PreToolUse` (Edit/Write/MultiEdit) | The "spec before code" gate (Key Rule 1). **Blocks** an edit to *implementation code* on a branch with no `specs/<branch>/requirements.md`. Downgrade with `SDD_GUARD=warn`/`off`. |
 
-## Advisory by default, blocking when you want it
+## Blocking by default, downgrade when you want
 
-The spec-before-code guard is **advisory** out of the box (it adds a warning to
-context, never blocks) so the plugin is safe to drop into any repo. To make it a
-hard gate that refuses code edits until a spec exists:
+The spec-before-code guard **blocks** by default — the kit's purpose is
+enforcement, not advice. It refuses an edit to implementation code on a branch
+with no `specs/<branch>/requirements.md`. Downgrade per shell:
 
 ```bash
-export SDD_GUARD=block
+export SDD_GUARD=warn   # advisory — adds a warning, never blocks
+export SDD_GUARD=off    # silent — no warning, no block
 ```
 
-It only ever considers real implementation code on a branch of a project that
-*already* has a Constitution — edits to `specs/`, docs, config, tests, and
-markdown always pass through, and a project that has never run
+This is safe to drop into any repo because the guard only fires on real
+implementation code, on a branch with no spec, in a project that **already has a
+Constitution** (`specs/domain-spec.md`). Edits to `specs/`, docs, config, tests,
+and markdown always pass through, and a project that has never run
 `/sdd-constitution` is never touched.
 
 ## How they load

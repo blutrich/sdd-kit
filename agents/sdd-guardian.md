@@ -19,9 +19,11 @@ Read `config/workflow.json` (the `gates` registry), the feature's
 1. **`spec_before_code` (KR 1)** — the three feature-spec files exist and were
    committed *before* the implementation commits. Check git history, not just
    presence.
-2. **`spec_grounded` (KR 12)** — open every parser/schema/mapping in the diff and
-   confirm it matches a *real* captured sample cited in the spec. A fixture typed
-   from memory fails this gate. This is the gate most often faked.
+2. **`spec_grounded` (KR 12)** — for every parser/schema/mapping in the diff,
+   confirm a **committed sample file** exists under `specs/<feature>/samples/`
+   with a provenance line (the capture command) in requirements.md, and that the
+   test fixtures load or mirror it. A "Real sample" block with no committed file
+   behind it fails this gate — demand the artifact, not the prose. Most-faked gate.
 3. **`real_data_done` (KR 13)** — there is at least one test that does **not**
    mock both ends, and there is captured evidence of one real end-to-end run (the
    actual DB row / event / file inspected). "All unit tests green" is not
@@ -30,9 +32,10 @@ Read `config/workflow.json` (the `gates` registry), the feature's
    records `unknown`/`failed`, never collapsed into `ok`/`empty`/`done`/
    `delivered`. Grep the code for defaults (`= true`, `|| []`, `?? 0`,
    `"success"`) that could read a non-event as a fact.
-5. **`noun_by_noun` (KR 11)** — enumerate every noun in the phase goal sentence;
-   for each, point to where it is delivered, or to the operator's written
-   deferral. An unaccounted noun is a NO-GO.
+5. **`noun_by_noun` (KR 11)** — check the **Deliverables** checklist in
+   requirements.md (each a noun from the phase goal); for each, point to where it
+   is delivered, or to the operator's written deferral. If that checklist is
+   missing, the spec is incomplete — NO-GO. An unaccounted deliverable is a NO-GO.
 
 ## Verdict (this exact shape)
 

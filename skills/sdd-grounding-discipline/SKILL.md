@@ -21,15 +21,27 @@ Whenever a decision depends on the real shape of an external artifact, **verify
 the real artifact first** — read the real file, call the real API, query the real
 DB, grep the real log — *before* writing the decision.
 
-## How to ground (in order of preference)
+## How to ground — capture with provenance (don't just paste a plausible block)
 
-1. **Capture a real sample.** Pull one actual instance of the shape: a real API
-   response body, a real row from the live DB, a real log line, the first 200
-   bytes of the real file.
-2. **Paste it (or its structure) into the spec** before writing the decision
-   that depends on it. The fixture used in tests must match a *real* observed
-   example, not an invented one.
-3. **Write the decision against the observed shape**, not the imagined one.
+A "Real sample" heading over a block you typed from memory passes the *letter* of
+this rule and fails its *point* — and it's the gate most often faked. So make the
+sample a **committed artifact with provenance**, not prose:
+
+1. **Capture a real sample to a file.** Run the real thing and save its output
+   under the feature's spec dir:
+   `specs/<feature>/samples/<name>` — e.g.
+   `curl -s "$ANALYTICS_URL/usage" | tee specs/<feature>/samples/analytics-response.json`,
+   or a real DB row, log line, or the first bytes of the real file.
+2. **Record HOW you captured it.** In `requirements.md`, cite the file *and* the
+   exact command/query that produced it (and when). The provenance line is what
+   makes "real" checkable by the plan-gap-reviewer and the guardian — both look
+   for the committed file, not a pasted block.
+3. **Write the decision against the captured shape**, and make the test fixtures
+   load (or mirror) that committed sample — never an invented one.
+
+If you genuinely cannot capture it (no credentials, the source doesn't exist
+yet), say so explicitly in Open Questions and mark the decision **deferred** — do
+not paper over the gap with a guessed sample.
 
 ## The brownfield trap
 

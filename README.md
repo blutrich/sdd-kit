@@ -123,6 +123,7 @@ The machine-readable flow, gates, models, and skill bindings live in
 |---|---|---|---|---|
 | `constitution-author` | Constitution | **opus** | synthesizes the whole project agreement — highest leverage | key-rules, observability-invariants |
 | `feature-planner` | Plan | **opus** | grounding + interview + spec design need judgment | grounding-discipline, key-rules, observability-invariants |
+| `plan-gap-reviewer` | Plan (exit) | **opus** | fresh-eyes review of the spec *before* code — anti-anchoring, no sight of the planner's rationale | grounding-discipline, key-rules, observability-invariants |
 | `implementer` | Implement | **sonnet** | executes an already-reviewed, grounded plan — speed in the loop | grounding-discipline, observability-invariants |
 | `reviewer` | Validate | **opus** | independent architect-level drift/grounding review | key-rules, grounding-discipline |
 | `validator` | Validate | **opus** | rigor; forces every failure/unknown path | key-rules, observability-invariants |
@@ -166,6 +167,7 @@ sdd-kit/
 ├── agents/                         # phase specialists
 │   ├── constitution-author.md      #   writes the 3 Constitution files
 │   ├── feature-planner.md          #   writes the 3 feature-spec files
+│   ├── plan-gap-reviewer.md        #   fresh-eyes review of the spec BEFORE code
 │   ├── implementer.md              #   executes plan.md, no merge
 │   ├── validator.md                #   runs validation.md, forces failure paths
 │   ├── reviewer.md                 #   architect-level drift/grounding review
@@ -221,6 +223,14 @@ Claude Code marketplace and install:
 
 Commands then appear as `/sdd-kit:sdd-plan` and friends; skills auto-trigger via
 their descriptions; agents are available to the `Task` tool.
+
+### Enforcement (fail-closed by default)
+
+Once a project has a Constitution, the `spec-before-code` hook **blocks** edits to
+implementation code on a branch with no feature spec (Key Rule 1). That's the
+point — the kit enforces, it doesn't just advise. Downgrade per shell if you need
+to: `export SDD_GUARD=warn` (advisory) or `SDD_GUARD=off` (silent). It never
+touches `specs/`, docs, config, tests, or a project that has no Constitution yet.
 
 ---
 

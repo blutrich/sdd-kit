@@ -28,9 +28,10 @@
       "agent": "feature-planner",
       "model": "opus",
       "skills": ["sdd-grounding-discipline", "sdd-key-rules", "sdd-observability-invariants"],
-      "produces": ["specs/<feature>/requirements.md", "specs/<feature>/plan.md", "specs/<feature>/validation.md"],
+      "produces": ["specs/<feature>/requirements.md", "specs/<feature>/plan.md", "specs/<feature>/validation.md", "specs/<feature>/samples/"],
       "entry_gates": ["constitution_complete"],
-      "exit_gates": ["spec_grounded", "spec_committed"],
+      "review": { "agent": "plan-gap-reviewer", "model": "opus", "comment": "Fresh-eyes review of the spec BEFORE code — no sight of the planner's rationale. Anti-anchoring." },
+      "exit_gates": ["spec_grounded", "spec_committed", "plan_reviewed"],
       "next": "implement"
     },
     {
@@ -89,9 +90,14 @@
     },
     "spec_grounded": {
       "rule": 12,
-      "assert": "Every data-dependent decision (parser, schema, mapping, anything consuming an external shape) cites a REAL captured sample, not an imagined one.",
-      "on_fail": "Stop. Capture the real sample (real API call / DB row / log line / file bytes) and cite it before writing the decision.",
+      "assert": "Every data-dependent decision cites a REAL captured sample committed under specs/<feature>/samples/ with a provenance line (the capture command) in requirements.md — not a block pasted from memory.",
+      "on_fail": "Stop. Capture the real sample (real API call / DB row / log line / file bytes) to a committed file and cite the command before writing the decision.",
       "skill": "sdd-grounding-discipline"
+    },
+    "plan_reviewed": {
+      "assert": "The feature spec passed an independent fresh-eyes plan-gap-reviewer (no sight of the planner's rationale) with a PROCEED verdict — gaps in grounding, edge cases, observability, scope, validation↔plan mirror, and the deliverables checklist were checked BEFORE code.",
+      "on_fail": "Route gaps back to feature-planner to REVISE the spec. Cheapest correction in the cycle.",
+      "owner": "plan-gap-reviewer"
     },
     "spec_committed": {
       "rule": 4,

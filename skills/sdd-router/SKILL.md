@@ -33,9 +33,9 @@ Route on the first matching signal. **ERROR/grounding-doubt always wins.**
 | Priority | Signal | Phase | Hand off to |
 |---|---|---|---|
 | 1 | No Constitution yet, or "start/refresh the constitution", domain/stack/roadmap changes | CONSTITUTION | `/sdd-constitution` → `constitution-author` |
-| 2 | "plan a feature", "spec X", "what's next", a new feature description | PLAN | `/sdd-plan` → `feature-planner` |
+| 2 | "plan a feature", "spec X", "what's next", a new feature description | PLAN | `/sdd-plan` → `feature-planner` → `plan-gap-reviewer` (fresh-eyes gate) |
 | 3 | "implement", "build the plan", an approved feature spec exists | IMPLEMENT | `/sdd-implement` → `implementer` |
-| 4 | "validate", "is it done", "prove it works" | VALIDATE | `/sdd-validate` → `validator` + `reviewer` |
+| 4 | "validate", "is it done", "prove it works" | VALIDATE | `/sdd-validate` → `validator` + `reviewer` → `sdd-guardian` (GO/NO-GO) |
 | 5 | "replan", a feature just merged | REPLAN | `/sdd-replan` → `replanner` |
 
 ## 2. Fail-closed gates (the whole point)
