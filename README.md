@@ -197,10 +197,19 @@ sdd-kit/
 
 This is a standard Claude Code plugin. Two ways:
 
-**1. Vendor it (simplest, shared per-repo).** Copy this folder into your project
-(e.g. as `.agent/` or `.claude/sdd-kit/`) and point your agent at it. The *live*
-specs you generate live in your project's `specs/` directory — nothing here is
-tied to a specific repo, stack, or company.
+**1. Vendor it (auto-loads for everyone who clones the repo).** Copy this folder
+into your project as **`.claude/skills/sdd-kit/`** (it must contain
+`.claude-plugin/plugin.json`). Claude Code then auto-loads it as a project-scoped
+*skills-directory plugin* — `sdd-kit@skills-dir` — on the next session, after you
+trust the workspace. No install step, no marketplace. Commands namespace as
+`/sdd-kit:sdd-plan`; the hooks load too.
+
+> ⚠️ A top-level `.agent/` directory is **not** auto-discovered by Claude Code —
+> it would sit inert. Use `.claude/skills/<name>/` (project scope, auto-loaded)
+> or `~/.claude/skills/<name>/` (personal scope, loads in every project).
+
+The *live* specs you generate live in your project's `specs/` directory — nothing
+here is tied to a specific repo, stack, or company.
 
 **2. Marketplace install (reusable across all your projects).** Add the repo to a
 Claude Code marketplace and install:
