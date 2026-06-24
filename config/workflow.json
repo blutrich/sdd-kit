@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "name": "sdd",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Machine-readable Spec-Driven Development flow: phases, the agent + model that run each, the artifacts they produce, and the fail-closed gates between them. The sdd-router skill reads this to route; the sdd-guardian agent reads the gates to give a final GO/NO-GO.",
 
   "models": {
