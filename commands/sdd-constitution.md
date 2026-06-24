@@ -9,6 +9,12 @@ Produce or update the three Constitution files in `specs/`. Delegate to the
 `constitution-author` agent. Read `reference/sdd-playbook-v4.md` (Part 1) and
 `reference/where-does-it-go.md` first.
 
+## Spec location
+The Constitution lives in `${SDD_SPECS_DIR:-specs}`. Run `echo ${SDD_SPECS_DIR:-specs}`
+once and treat every `specs/…` path below as relative to that directory (default
+`specs/`). The hooks resolve the same env var, so honoring it keeps the
+Constitution where the SessionStart and spec-before-code hooks look for it.
+
 ## Detect the mode
 - **Greenfield** (no code, or `$ARGUMENTS` = greenfield): interview the operator
   with clarifying questions, each carrying a recommendation (Key Rule 14).

@@ -19,7 +19,11 @@ is in `reference/sdd-playbook-v4.md`; the content→file map is in
 
 ## 0. Orient before routing
 
-Read the project's `specs/` directory first:
+Specs live in `${SDD_SPECS_DIR:-specs}` — run `echo ${SDD_SPECS_DIR:-specs}` once
+and read every `specs/…` path in this skill as relative to it (default `specs/`).
+The hooks resolve the same env var.
+
+Read the project's specs directory first:
 - Is there a Constitution (`specs/domain-spec.md`, `engineering-spec.md`,
   `roadmap.md`)? If **no** → the only valid first move is the Constitution.
 - What is the next unchecked phase in `roadmap.md`?

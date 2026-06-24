@@ -256,6 +256,10 @@ point — the kit enforces, it doesn't just advise. Downgrade per shell if you n
 to: `export SDD_GUARD=warn` (advisory) or `SDD_GUARD=off` (silent). It never
 touches `specs/`, docs, config, tests, or a project that has no Constitution yet.
 
+Don't want a top-level `specs/`? Set `export SDD_SPECS_DIR=docs/specs` (relative
+to the repo root, default `specs`). The hooks, `/sdd-constitution`, `/sdd-plan`,
+and the router all resolve it, so creation and enforcement stay in sync.
+
 ---
 
 ## Why it works

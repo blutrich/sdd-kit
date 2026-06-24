@@ -12,6 +12,8 @@ Output protocol: print a JSON object with hookSpecificOutput.additionalContext
 on stdout (the SessionStart contract). Always exit 0 — a context hook must never
 break a session.
 """
+from __future__ import annotations  # str | None hints must not eval on Python <3.10
+
 import json
 import os
 import re
@@ -40,9 +42,16 @@ def first_unchecked_phase(roadmap_path: str) -> str | None:
     return None
 
 
+def specs_dirname() -> str:
+    # Where specs live, relative to the repo root. Default "specs"; override with
+    # SDD_SPECS_DIR (e.g. docs/specs) to keep specs out of the top level.
+    return (os.environ.get("SDD_SPECS_DIR", "specs") or "specs").strip().strip("/")
+
+
 def main() -> int:
     root = find_project_root()
-    specs = os.path.join(root, "specs")
+    specs_rel = specs_dirname()
+    specs = os.path.join(root, specs_rel)
     domain = os.path.join(specs, "domain-spec.md")
     eng = os.path.join(specs, "engineering-spec.md")
     roadmap = os.path.join(specs, "roadmap.md")
@@ -52,7 +61,7 @@ def main() -> int:
         return 0
 
     lines = [
-        "📜 This project uses Spec-Driven Development (sdd-kit). The Constitution lives in specs/:",
+        f"📜 This project uses Spec-Driven Development (sdd-kit). The Constitution lives in {specs_rel}/:",
         f"  - domain-spec.md (what + rules, tech-independent){' ✓' if os.path.isfile(domain) else ''}",
         f"  - engineering-spec.md (stack, schemas, observability seam){' ✓' if os.path.isfile(eng) else ''}",
         f"  - roadmap.md (sequencing){' ✓' if os.path.isfile(roadmap) else ''}",

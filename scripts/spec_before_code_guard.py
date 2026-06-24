@@ -23,8 +23,12 @@ import re
 import subprocess
 import sys
 
+# Where specs live, relative to the repo root. Default "specs". Override with
+# SDD_SPECS_DIR to keep specs out of the top level, e.g. SDD_SPECS_DIR=docs/specs.
+SPECS_DIR = (os.environ.get("SDD_SPECS_DIR", "specs") or "specs").strip().strip("/")
+
 # Paths that are NOT implementation code — editing these never needs a spec.
-EXEMPT_PREFIXES = ("specs/", "docs/", ".agent/", ".claude/", ".github/")
+EXEMPT_PREFIXES = (SPECS_DIR.lower() + "/", "specs/", "docs/", ".agent/", ".claude/", ".github/")
 EXEMPT_SUFFIXES = (".md", ".json", ".yml", ".yaml", ".toml", ".txt", ".lock")
 EXEMPT_NAMES = ("package.json", "tsconfig.json", "README.md")
 # Only treat these as "implementation code".
@@ -70,18 +74,18 @@ def main() -> int:
         return 0
 
     # No Constitution at all → this isn't an SDD project; don't interfere.
-    if not os.path.isfile(os.path.join(root, "specs", "domain-spec.md")):
+    if not os.path.isfile(os.path.join(root, SPECS_DIR, "domain-spec.md")):
         return 0
 
     branch = git(["rev-parse", "--abbrev-ref", "HEAD"], cwd)
-    spec_dir = os.path.join(root, "specs", branch)
+    spec_dir = os.path.join(root, SPECS_DIR, branch)
     has_spec = os.path.isfile(os.path.join(spec_dir, "requirements.md"))
     if has_spec:
         return 0  # spec exists — gate satisfied.
 
     reason = (
         f"SDD gate (Key Rule 1 — spec before code): about to edit '{rel}' but branch "
-        f"'{branch}' has no feature spec at specs/{branch}/requirements.md. Write and "
+        f"'{branch}' has no feature spec at {SPECS_DIR}/{branch}/requirements.md. Write and "
         f"commit the spec first (/sdd-plan): requirements.md, plan.md, validation.md — "
         f"and ground any data-dependent decision in a real sample (KR12)."
     )

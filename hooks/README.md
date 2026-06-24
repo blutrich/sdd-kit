@@ -26,6 +26,21 @@ Constitution** (`specs/domain-spec.md`). Edits to `specs/`, docs, config, tests,
 and markdown always pass through, and a project that has never run
 `/sdd-constitution` is never touched.
 
+## Keeping specs out of the top level
+
+By default specs live in a top-level `specs/` directory. To nest them elsewhere
+(so they don't clutter the repo root), set `SDD_SPECS_DIR` per shell:
+
+```bash
+export SDD_SPECS_DIR=docs/specs   # Constitution → docs/specs/domain-spec.md, etc.
+```
+
+Both hooks resolve this env var, and the `/sdd-constitution`, `/sdd-plan`, and
+router instructions resolve the same one — so spec creation and the
+spec-before-code gate stay pointed at the same place. Default is `specs`; the path
+is relative to the repo root. Set it in your project's `.claude/settings.json`
+`env` block (or your shell profile) so it's consistent for everyone.
+
 ## How they load
 
 `hooks/hooks.json` is auto-discovered when sdd-kit is installed as a plugin;

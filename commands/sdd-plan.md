@@ -9,6 +9,12 @@ Create the feature spec for `$ARGUMENTS` (or the next unchecked roadmap phase)
 before any implementation. Delegate to the `feature-planner` agent. Read
 `reference/sdd-playbook-v4.md` (Part 2) first.
 
+## Spec location
+Specs live in `${SDD_SPECS_DIR:-specs}`. Run `echo ${SDD_SPECS_DIR:-specs}` once
+and treat every `specs/…` path below as relative to that directory (default
+`specs/`). The hooks resolve the same env var, so honoring it keeps spec creation
+and the spec-before-code gate pointed at the same place.
+
 ## Start clean
 Fresh context (Key Rule 3). Confirm the previous feature branch is merged and the
 constitution is up to date. Create the spec dir + branch:
