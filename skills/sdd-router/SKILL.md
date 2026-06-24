@@ -38,7 +38,35 @@ Route on the first matching signal. **ERROR/grounding-doubt always wins.**
 | 4 | "validate", "is it done", "prove it works" | VALIDATE | `/sdd-validate` → `validator` + `reviewer` → `sdd-guardian` (GO/NO-GO) |
 | 5 | "replan", a feature just merged | REPLAN | `/sdd-replan` → `replanner` |
 
-## 2. Fail-closed gates (the whole point)
+## 2. Run autonomously — only stop at one-way doors
+
+Read `config/workflow.json` → `automation`. When `mode` is `"autonomous"`
+(the default), **chain the whole cycle yourself.** After a phase's agent
+returns, evaluate that phase's `exit_gates` and advance straight to
+`phases[].next` — do not pause to summarize and wait, do not ask the operator to
+approve a reversible step. The fail-closed gates in §3 are NOT skipped; the
+phase agents still enforce them. The only change is *who clears a passing gate*:
+the agent does, not a human round-trip.
+
+**A gate that FAILS does not automatically mean stop.** Auto-remediate when the
+fix is mechanical and reversible, then re-check:
+- ungrounded decision → capture the real sample, cite the command, continue;
+- `plan-gap-reviewer` returns REVISE → route the gaps back to `feature-planner`,
+  re-review, continue;
+- spec uncommitted → commit it; failure/unknown path unproven → force it.
+
+**Stop and `AskUserQuestion` ONLY at a one-way door** (the `human_stop_conditions`):
+merge / deploy / release; destructive or irreversible ops (delete/drop, force-push,
+prod migration); external side-effects with real-world reach (send a message,
+post publicly, charge money); **dropping a goal noun** (Rule 11 sign-off is itself
+a one-way door); a genuinely ambiguous fork with lasting, expensive-to-reverse
+consequences and no safe default; or a gate still NO-GO after remediation.
+
+Reversible work — edits, new code/tests, new spec files, feature-branch commits,
+re-running validation — is a **two-way door**: just do it. A wrong reversible
+choice is cheap to undo; stopping to ask is the real cost.
+
+## 3. Fail-closed gates (the whole point)
 
 Refuse to advance and say why when:
 - **No approved spec → no code.** If asked to implement without the three
@@ -52,14 +80,15 @@ Refuse to advance and say why when:
 - **A goal noun silently dropped.** At done, every noun in the phase goal must be
   delivered or explicitly deferred with the operator's sign-off (Key Rule 11).
 
-## 3. How to ask
+## 4. How to ask (when you genuinely must)
 
-Every question you surface to the operator carries your recommended answer and a
-one-line *why* (Key Rule 14). In `AskUserQuestion`, put the recommended option
-**first**, end its label with `(Recommended)`, and the *why* in its description —
-never a neutral menu, never a `RECOMMEND:`-prefixed question string.
+In autonomous mode you should reach `AskUserQuestion` rarely — only at a one-way
+door (§2). When you do, the question carries your recommended answer and a
+one-line *why* (Key Rule 14): put the recommended option **first**, end its label
+with `(Recommended)`, and the *why* in its description — never a neutral menu,
+never a `RECOMMEND:`-prefixed question string.
 
-## 4. Never bypass
+## 5. Never bypass
 
 Do not use Claude Code's native plan mode for SDD work — this kit owns planning,
 so the spec artifacts, grounding gate, and validation actually get written. A

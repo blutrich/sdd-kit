@@ -10,6 +10,23 @@
     "comment": "Best model per task: every judgment/correctness role — constitution, plan, review, validate, replan, and the final guardian gate — runs on opus. Only the implementer runs on sonnet, because it executes an already-reviewed, grounded plan and benefits from speed in the tight implement→validate loop. The guardian is a SEPARATE agent from the validator on purpose (independent second judgment, not self-review). Override per-project — SDD is agent- and model-agnostic."
   },
 
+  "automation": {
+    "mode": "autonomous",
+    "comment": "Operator preference: auto-chain the whole cycle without stopping for approval. The router advances phase→phase on its own and lets each phase's agent evaluate its own gates. The fail-closed gates are NOT removed — they still run; they're just evaluated by the agents instead of bounced to a human. Stop for a human ONLY at a one-way door (below). For everything reversible: pick the recommended default and proceed.",
+    "auto_advance": true,
+    "on_gate_pass": "Advance to phases[].next automatically. Do not ask, do not summarize-and-wait.",
+    "on_gate_fail": "Auto-remediate when the fix is mechanical and reversible — capture the missing real sample, route a REVISE verdict back to feature-planner, commit the spec, force the failure/unknown path, re-run validation. Surface to the human only if remediation itself requires a one-way-door decision, or the gate stays NO-GO after a remediation attempt.",
+    "human_stop_conditions": [
+      "MERGE / release / deploy to a shared or production target — integrating work outward.",
+      "DESTRUCTIVE or irreversible action — delete or drop data, force-push, rewrite history, prod schema migration.",
+      "EXTERNAL SIDE EFFECT with real-world reach — sending a message/email, posting publicly, charging money, or any external call that can't be undone.",
+      "DROPPING A GOAL NOUN — deferring or cutting anything the phase goal named requires operator sign-off (Rule 11). The sign-off itself is a one-way door.",
+      "A genuinely ambiguous fork with lasting, expensive-to-reverse consequences and no safe default the agent can defend.",
+      "A fail-closed gate that remains NO-GO after auto-remediation was attempted."
+    ],
+    "two_way_doors": "Anything reversible — file edits, new code, new tests, new spec files, commits on a feature branch, re-running validation, a gate that PASSES — proceed without asking. A wrong reversible choice is cheap to undo; surfacing it as a question is the real cost."
+  },
+
   "phases": [
     {
       "id": "constitution",
