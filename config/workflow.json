@@ -24,7 +24,19 @@
       "A genuinely ambiguous fork with lasting, expensive-to-reverse consequences and no safe default the agent can defend.",
       "A fail-closed gate that remains NO-GO after auto-remediation was attempted."
     ],
-    "two_way_doors": "Anything reversible — file edits, new code, new tests, new spec files, commits on a feature branch, re-running validation, a gate that PASSES — proceed without asking. A wrong reversible choice is cheap to undo; surfacing it as a question is the real cost."
+    "two_way_doors": "Anything reversible — file edits, new code, new tests, new spec files, commits on a feature branch, re-running validation, a gate that PASSES — proceed without asking. A wrong reversible choice is cheap to undo; surfacing it as a question is the real cost.",
+    "cycle_summary": {
+      "when": "At the END of every build cycle — after the guardian returns GO/NO-GO (i.e. at the merge one-way door), and again after replan. Always emit it before stopping at the merge decision, so the operator reads the summary then makes the call.",
+      "audience": "The operator (user). Plain prose, no internal agent chatter.",
+      "include": [
+        "Feature + the phase goal sentence it served.",
+        "Goal nouns, each marked delivered or deferred-with-sign-off (Rule 11).",
+        "Gate results: every fail-closed gate and its PASS/NO-GO with one line of evidence (real-data proof, grounding sample cited, failure/unknown path forced).",
+        "What changed: files/code/tests added, and the real end-to-end artifact that was inspected.",
+        "Anything auto-remediated mid-cycle (sample captured, REVISE routed back, failure path forced).",
+        "What's next: the next roadmap phase, plus the one-way-door decision now awaiting the operator (e.g. merge/deploy)."
+      ]
+    }
   },
 
   "phases": [

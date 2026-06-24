@@ -66,6 +66,24 @@ Reversible work — edits, new code/tests, new spec files, feature-branch commit
 re-running validation — is a **two-way door**: just do it. A wrong reversible
 choice is cheap to undo; stopping to ask is the real cost.
 
+### End every build cycle with a summary
+
+A build cycle ends when the guardian returns GO/NO-GO — which is the merge
+one-way door — and again after replan. Before you stop at that decision, give
+the operator a plain-prose summary (`config/workflow.json` →
+`automation.cycle_summary`):
+
+- the feature and the **phase goal** it served;
+- each **goal noun** marked delivered or deferred-with-sign-off (Rule 11);
+- every **fail-closed gate** with PASS / NO-GO and one line of evidence;
+- **what changed** (files/code/tests) and the real end-to-end artifact inspected;
+- anything **auto-remediated** mid-cycle;
+- **what's next** — the next roadmap phase and the one-way-door decision now
+  awaiting the operator (e.g. merge/deploy).
+
+The summary comes first, then the merge question. It is the operator's read of
+the cycle before they make the irreversible call.
+
 ## 3. Fail-closed gates (the whole point)
 
 Refuse to advance and say why when:
