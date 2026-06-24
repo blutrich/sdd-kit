@@ -197,7 +197,30 @@ sdd-kit/
 
 ## Install
 
-This is a standard Claude Code plugin. Two ways:
+### Quickest — one line
+
+In a terminal:
+
+```bash
+claude plugin marketplace add blutrich/sdd-kit && claude plugin install sdd-kit@sdd-kit
+```
+
+Or, already inside Claude Code, paste these two:
+
+```text
+/plugin marketplace add blutrich/sdd-kit
+/plugin install sdd-kit@sdd-kit
+```
+
+That's the whole install — commands then appear as `/sdd-kit:sdd-plan` and
+friends, skills auto-trigger via their descriptions, agents are available to the
+`Task` tool, and the hooks load. (Claude Code has no single combined command or
+URL-based one-click for plugins; the chained shell line above is the
+lowest-friction path.)
+
+---
+
+This is a standard Claude Code plugin. Two other ways if the above doesn't fit:
 
 **1. Vendor it (auto-loads for everyone who clones the repo).** Copy this folder
 into your project as **`.claude/skills/sdd-kit/`** (it must contain
@@ -213,16 +236,17 @@ trust the workspace. No install step, no marketplace. Commands namespace as
 The *live* specs you generate live in your project's `specs/` directory — nothing
 here is tied to a specific repo, stack, or company.
 
-**2. Marketplace install (reusable across all your projects).** Add the repo to a
-Claude Code marketplace and install:
+**2. Marketplace install (reusable across all your projects).** The one-line
+install at the top of this section is exactly this path — add the repo as a
+marketplace, then install the plugin from it:
 
-```bash
-/plugin marketplace add <owner>/sdd-kit
-/plugin install sdd-kit
+```text
+/plugin marketplace add blutrich/sdd-kit
+/plugin install sdd-kit@sdd-kit
 ```
 
-Commands then appear as `/sdd-kit:sdd-plan` and friends; skills auto-trigger via
-their descriptions; agents are available to the `Task` tool.
+The `@sdd-kit` suffix is the marketplace name (from `.claude-plugin/marketplace.json`),
+which happens to match the plugin name here.
 
 ### Enforcement (fail-closed by default)
 
