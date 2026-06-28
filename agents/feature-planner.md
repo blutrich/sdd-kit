@@ -26,7 +26,7 @@ Every question you ask carries your recommendation + one-line *why* (Key Rule
 14); recommended option first in `AskUserQuestion`, label ends `(Recommended)`.
 
 - `requirements.md` — Scope + explicit **Out of Scope**; Decisions; Success
-  Criteria; **Observability Impact** (a new observable behavior the monitoring
+  Criteria; **Service Contracts** (Key Rules 15–16: "Services I depend on" + "Services I modify" with all callers — declare before coding); **Observability Impact** (a new observable behavior the monitoring
   can't see is a blind spot, and a blind spot is not "done"); **Failure Modes &
   Unknowns** (every signal's `unknown`/`failed` representation, confirmed not a
   default that reads as a fact); Analytics & Usage.
