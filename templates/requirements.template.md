@@ -41,6 +41,19 @@ What this feature is trying to achieve, as measurable goals. (e.g. "A user can
 configure and launch X in under 5 minutes.") The target the implementation must
 satisfy — not something the agent implements directly.
 
+## Service Contracts
+Two mandatory lists — fill before coding (Key Rules 15–16).
+
+_Services I depend on_ — external functions/interfaces this feature _calls_:
+- `<filename>` → `<functionName>()` — <one-line reason>
+- <…>
+
+_Services I modify_ — external functions/interfaces this feature _changes_:
+- `<filename>` → `<functionName>()` — <callers: list files that call this>
+- <…>
+
+If any "Services I modify" entry is also listed in another feature's "Services I depend on," cross-reference both specs here. A missing entry is how silent regressions happen.
+
 ## Observability Impact
 Does this feature introduce a new **observable behavior** — a new action, a new
 trigger/entry point, a new delivery path, a new external/metered call, a new
