@@ -16,6 +16,7 @@ Top-level commands that must pass:
 
 Specific test cases (each states exactly what it asserts):
 - [ ] <assertion>
+- [ ] **Cross-feature smoke test** (required when "Services I modify" is non-empty): at least one test instantiates the modified service _and_ a real caller together — no mocks between them — and asserts the end-to-end result. This is what catches silent caller-wiring breaks when a signature changes.
 - [ ] **At least one test exercises real collaborators — doesn't mock both
       ends** — runs through the real store/parser/file/adapter (in-memory or
       fixture-backed is fine) and asserts the result persists and reads back.
