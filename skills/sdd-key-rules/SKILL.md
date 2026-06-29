@@ -63,3 +63,6 @@ model of an external system instead of its *real* shape, and "done" claimed on
 green tests that mocked both ends. They are the cheapest insurance against the
 most expensive class of bug. When in doubt, look at the real thing, and run it
 once for real.
+
+15. **Declare service contracts before coding.** Every requirements.md must include two explicit lists: "Services I depend on" (functions/interfaces this feature _calls_) and "Services I modify" (functions/interfaces this feature _changes_). If a feature modifies a service another feature depends on, both specs must cross-reference each other. A contract not written down is a contract that will be broken silently.
+16. **Verify caller wiring on every PR that changes a function signature.** When a PR modifies a function's signature, parameters, or dependency injection interface, the author must grep all callers and confirm each is updated. A green TypeScript compile is not sufficient — the compiler verifies types, not runtime dependency injection. Include a caller audit note in the PR description: "Callers checked: [list of files]."
