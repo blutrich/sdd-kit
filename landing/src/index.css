@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --paper: #f6f1e5;
+  --paper-deep: #efe7d4;
+  --ink: #1d1a14;
+  --ink-soft: #4c463a;
+  --ink-faint: rgba(29, 26, 20, 0.14);
+  --stamp-red: #b3261e;
+  --stamp-green: #1e6e46;
+  --gold: #8a6d1f;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --serif: "Fraunces", Georgia, serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* paper grain */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.11 0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.font-mono {
+  font-family: var(--mono);
+}
+
+.kicker {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.display {
+  font-family: var(--serif);
+  font-variation-settings: "opsz" 144;
+  font-weight: 560;
+  letter-spacing: -0.015em;
+  line-height: 1.02;
+}
+
+.rule {
+  border-top: 1px solid var(--ink-faint);
+}
+.rule-strong {
+  border-top: 2px solid var(--ink);
+}
+
+.stamp {
+  font-family: var(--mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  border: 2.5px solid currentColor;
+  border-radius: 6px;
+  padding: 0.35em 0.7em;
+  display: inline-block;
+  transform: rotate(-4deg);
+  position: relative;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='r'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.18' numOctaves='3' seed='7'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='discrete' tableValues='0 .4 .7 1 1 1 1 1 1 1'/%3E%3C/feComponentTransfer%3E%3CfeComposite operator='in' in2='SourceGraphic'/%3E%3C/filter%3E%3Crect width='160' height='160' fill='black' filter='url(%23r)'/%3E%3C/svg%3E");
+  mask-size: 160px 160px;
+}
+.stamp-red {
+  color: var(--stamp-red);
+}
+.stamp-green {
+  color: var(--stamp-green);
+}
+
+.codebox {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  background: var(--ink);
+  color: #efe9da;
+  border-radius: 8px;
+  padding: 1.1rem 1.3rem;
+  overflow-x: auto;
+  box-shadow: 6px 6px 0 rgba(29, 26, 20, 0.15);
+}
+.codebox .c {
+  color: #9a927f;
+}
+.codebox .g {
+  color: #8fd3ac;
+}
+.codebox .r {
+  color: #f2a19b;
+}
+
+.clause-num {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+}
+
+.drop-cap::first-letter {
+  font-family: var(--serif);
+  font-weight: 700;
+  float: left;
+  font-size: 3.4em;
+  line-height: 0.82;
+  padding-right: 0.12em;
+  padding-top: 0.05em;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes stampIn {
+  0% {
+    opacity: 0;
+    transform: rotate(-4deg) scale(1.9);
+  }
+  60% {
+    opacity: 1;
+    transform: rotate(-4deg) scale(0.94);
+  }
+  100% {
+    transform: rotate(-4deg) scale(1);
+  }
+}
+.stamp-in {
+  animation: stampIn 0.5s 0.55s cubic-bezier(0.3, 1.2, 0.4, 1) both;
+}
+
+::selection {
+  background: rgba(179, 38, 30, 0.18);
+}

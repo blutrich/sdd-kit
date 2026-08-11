@@ -1,7 +1,6 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "name": "sdd",
-  "version": "0.3.0",
+  "name": "sdd-kit",
+  "version": "0.4.0",
   "description": "Machine-readable Spec-Driven Development flow: phases, the agent + model that run each, the artifacts they produce, and the fail-closed gates between them. The sdd-router skill reads this to route; the sdd-guardian agent reads the gates to give a final GO/NO-GO.",
 
   "models": {
@@ -70,7 +69,7 @@
       "model": "sonnet",
       "skills": ["sdd-grounding-discipline", "sdd-observability-invariants"],
       "produces": ["code", "tests"],
-      "entry_gates": ["spec_before_code", "spec_grounded"],
+      "entry_gates": ["spec_before_code", "spec_committed", "plan_reviewed", "spec_grounded"],
       "exit_gates": [],
       "next": "validate"
     },
@@ -82,7 +81,7 @@
       "skills": ["sdd-key-rules", "sdd-observability-invariants"],
       "produces": ["validation-evidence"],
       "entry_gates": [],
-      "exit_gates": ["real_data_done", "failure_unknown_verified"],
+      "exit_gates": ["real_data_done", "failure_unknown_verified", "noun_by_noun"],
       "review": { "agent": "reviewer", "model": "opus" },
       "next": "guardian"
     },
@@ -95,8 +94,8 @@
       "produces": ["go-no-go-verdict"],
       "entry_gates": [],
       "exit_gates": ["all_gates_pass"],
-      "comment": "The final fail-closed checkpoint before merge. Independently re-checks every gate; a single failed gate is NO-GO.",
-      "next": "merge"
+      "comment": "The final fail-closed checkpoint before merge. Independently re-checks every gate; a single failed gate is NO-GO. 'merge' is not a phase — it is the human one-way door; after it, the cycle continues at replan.",
+      "next": "replan"
     },
     {
       "id": "replan",
@@ -154,7 +153,7 @@
       "on_fail": "NO-GO. A noun the goal named and quietly dropped is a gap."
     },
     "all_gates_pass": {
-      "assert": "spec_before_code AND spec_grounded AND real_data_done AND failure_unknown_verified AND noun_by_noun all hold.",
+      "assert": "spec_before_code AND spec_committed AND plan_reviewed AND spec_grounded AND real_data_done AND failure_unknown_verified AND noun_by_noun all hold.",
       "on_fail": "NO-GO. Report each failed gate with evidence; do not soften.",
       "owner": "sdd-guardian"
     }

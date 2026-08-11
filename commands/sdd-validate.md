@@ -13,8 +13,12 @@ the `reviewer` agent do an independent architect-level pass.
 1. **Automated tests + typecheck** — top-level commands must pass. Confirm **at
    least one test exercises real collaborators** (doesn't mock both ends) (Key
    Rule 13).
-2. **Grounding check** — every data-dependent decision was verified against a
-   real sample, and the sample/structure is cited.
+2. **Grounding check** — first run the mechanical half:
+   `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/check_grounding.py" <feature-dir>`
+   (verifies `samples/` is non-empty and every sample opens with a provenance
+   line + capture date — exit 1 is a hard fail). Then the judgment half: every
+   data-dependent decision in requirements.md actually **cites** one of those
+   captured samples — not a structure pasted from memory (Key Rule 12).
 3. **Manual checks** — specific behaviors a human confirms in the running app.
 4. **End-to-end on real data** — trigger the real behavior, inspect the real
    artifact it produced (the live DB row, the event, the file). Capture the

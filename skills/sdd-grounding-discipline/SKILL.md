@@ -60,7 +60,12 @@ confident, wrong assumption about a format nobody actually looked at.
 ## At validation time
 
 `validation.md` must confirm every data-dependent decision was checked against a
-real sample and that the sample (or its structure) is cited in the spec. If the
-feature parses an external format, the test fixtures must match a real observed
-example. This is the cheapest insurance against the most expensive class of bug:
-a parser/schema built against an imagined shape.
+**committed sample file** under `specs/<feature>/samples/` with its provenance
+line — a described "structure" without the captured artifact behind it does not
+pass; that is the exact loophole this rule exists to close. The mechanical half
+is scriptable: run
+`python3 "${CLAUDE_PLUGIN_ROOT}/scripts/check_grounding.py" <feature-dir>`
+(samples present + provenance + capture date; exit 1 is a hard fail). If the
+feature parses an external format, the test fixtures must load or mirror the
+committed sample. This is the cheapest insurance against the most expensive
+class of bug: a parser/schema built against an imagined shape.
