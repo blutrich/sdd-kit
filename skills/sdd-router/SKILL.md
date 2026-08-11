@@ -13,9 +13,15 @@ description: |
 # SDD Router
 
 The brain of `sdd-kit`. Route a request to the right phase of the Spec-Driven
-Development cycle, then hand off to that phase's command/agent. The full method
-is in `reference/sdd-playbook-v4.md`; the content→file map is in
-`reference/where-does-it-go.md`. Read them when a decision is unclear.
+Development cycle, then hand off to that phase's command/agent.
+
+**Locating kit files:** every `reference/…`, `config/…`, and `scripts/…` path in
+this skill lives under the kit's install root, NOT the user's project. Resolve
+it once — `echo "$CLAUDE_PLUGIN_ROOT"`, or failing that the vendored copy at
+`.claude/skills/sdd-kit/` or the newest version under
+`~/.claude/plugins/cache/sdd-kit/sdd-kit/` — and prefix these paths with it.
+The full method is in `reference/sdd-playbook-v4.md`; the content→file map is
+in `reference/where-does-it-go.md`. Read them when a decision is unclear.
 
 ## 0. Orient before routing
 
@@ -29,6 +35,9 @@ Read the project's specs directory first:
 - What is the next unchecked phase in `roadmap.md`?
 - Is there an in-flight `specs/YYYY-MM-DD-feature-name/` (the three feature
   files exist but code isn't merged)? If so, continue it — don't start a new one.
+- If the kit seems inert (no constitution injected at session start, gates not
+  firing when they should), run `/sdd-doctor` — the hooks fail open, so a stale
+  plugin cache or missing `python3` looks like silent non-enforcement.
 
 ## 1. Intent routing
 
@@ -96,7 +105,7 @@ Refuse to advance and say why when:
 - **Ungrounded data decision.** If the work parses/stores/reacts to an external
   shape (file format, API response, log line, live DB columns) and no real
   sample is captured and cited in the spec, stop and capture it first (Key Rule
-  12). See `skills/sdd-grounding-discipline`.
+  12). See the `sdd-grounding-discipline` skill.
 - **"Done" claimed on mocks.** Don't accept completion without at least one test
   that doesn't mock both ends and one real-data end-to-end check (Key Rule 13).
 - **A goal noun silently dropped.** At done, every noun in the phase goal must be

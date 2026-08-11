@@ -2,20 +2,25 @@
 """PreToolUse hook — the 'spec before code' gate (Key Rule 1), deterministically.
 
 Repo-agnostic, dependency-free. Fires before Edit/Write/MultiEdit. If the agent
-is about to modify *implementation code* on a feature branch that has no
-committed feature spec (specs/<branch>/requirements.md), it nudges: write the
-spec first. By default this is ADVISORY (adds context, never blocks) so the
-plugin is safe to drop into any repo. To make it a hard gate, set the env var
-SDD_GUARD=block — then a missing spec returns 'deny' and the edit is refused.
+is about to modify *implementation code* on a branch that has no committed
+feature spec, the edit is DENIED (fail-closed is the default — the kit's point
+is enforcement, not advice). Downgrade with SDD_GUARD=warn (advisory context,
+never blocks) or SDD_GUARD=off (silent no-op).
+
+Spec resolution (Key Rule 1 + 4): the branch maps to a spec directory under
+SPECS_DIR by, in order: the exact branch name, its last path segment (so
+`spec/2026-08-11-thing` finds `specs/2026-08-11-thing/`), and the branch with
+slashes slugified to dashes. The matched spec's requirements.md must also be
+COMMITTED to git (KR4) — an untracked file is not an approved spec.
 
 Never touches files outside an implementation path: edits to specs/, docs,
 config, tests, and markdown pass through untouched. Always fails open on any
 internal error — a guard that breaks the editor is worse than no guard.
 
 Input: the PreToolUse JSON on stdin (tool_name, tool_input.file_path, cwd).
-Output (advisory): {"hookSpecificOutput": {"additionalContext": "..."}} + exit 0.
 Output (block):    {"hookSpecificOutput": {"permissionDecision": "deny",
                     "permissionDecisionReason": "..."}} + exit 0.
+Output (advisory): {"hookSpecificOutput": {"additionalContext": "..."}} + exit 0.
 """
 import json
 import os
@@ -32,7 +37,20 @@ EXEMPT_PREFIXES = (SPECS_DIR.lower() + "/", "specs/", "docs/", ".agent/", ".clau
 EXEMPT_SUFFIXES = (".md", ".json", ".yml", ".yaml", ".toml", ".txt", ".lock")
 EXEMPT_NAMES = ("package.json", "tsconfig.json", "README.md")
 # Only treat these as "implementation code".
-CODE_EXTS = (".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs", ".java", ".rb", ".php", ".c", ".cpp", ".cs", ".swift", ".kt")
+CODE_EXTS = (
+    ".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs", ".java", ".rb", ".php",
+    ".c", ".cpp", ".cs", ".swift", ".kt",
+    ".sh", ".bash", ".zsh", ".sql", ".vue", ".svelte", ".ex", ".exs",
+    ".dart", ".scala", ".tf", ".lua", ".pl", ".zig", ".m", ".mm",
+)
+
+# Test files are exempt. Directory-aware + anchored basename patterns — NOT a
+# naive substring match ('latest.ts' is code; 'tests/helpers.py' is a test file).
+TEST_DIR_SEGMENTS = {"test", "tests", "__tests__", "spec", "specs", "testing", "e2e"}
+TEST_BASENAME_RE = re.compile(
+    r"^(test[_\-.]|conftest\.py$)"      # test_foo.py, test-foo.ts, test.ts, conftest.py
+    r"|.*[_\-.](test|spec)\.[^.]+$"     # foo_test.go, foo-test.ts, foo.test.ts, foo.spec.ts
+)
 
 
 def git(args, cwd):
@@ -44,15 +62,58 @@ def git(args, cwd):
         return ""
 
 
+def is_test_path(rel: str) -> bool:
+    low = rel.lower().replace("\\", "/")
+    segments = low.split("/")[:-1]
+    if any(seg in TEST_DIR_SEGMENTS for seg in segments):
+        return True
+    return bool(TEST_BASENAME_RE.match(os.path.basename(low)))
+
+
 def is_code_path(rel: str) -> bool:
     low = rel.lower()
     if low.startswith(EXEMPT_PREFIXES) or low.endswith(EXEMPT_SUFFIXES):
         return False
     if os.path.basename(low) in EXEMPT_NAMES:
         return False
-    if "test" in os.path.basename(low) or low.endswith(".test.ts") or low.endswith(".spec.ts"):
+    if is_test_path(rel):
         return False
     return low.endswith(CODE_EXTS)
+
+
+def spec_candidates(branch: str):
+    """Spec-dir names this branch may map to, most specific first (fixes the
+    recurring `spec/<name>` mis-resolution: a slashed branch's last segment or
+    slug now matches a flat spec dir)."""
+    if not branch or branch == "HEAD":
+        return []
+    cands = [branch]
+    if "/" in branch:
+        cands.append(branch.split("/")[-1])
+        cands.append(branch.replace("/", "-"))
+    return cands
+
+
+def resolve_spec(root: str, branch: str):
+    """Return (spec_dir_name, requirements_relpath) for the first candidate
+    whose requirements.md exists on disk, else (None, None)."""
+    for cand in spec_candidates(branch):
+        req = os.path.join(root, SPECS_DIR, cand, "requirements.md")
+        if os.path.isfile(req):
+            return cand, os.path.relpath(req, root)
+    return None, None
+
+
+def is_committed(root: str, relpath: str) -> bool:
+    """True when the file has at least one commit touching it (KR4). Fails open:
+    if git can't answer, treat the on-disk file as satisfying the gate."""
+    out = subprocess.run(
+        ["git", "log", "--oneline", "-1", "--", relpath],
+        cwd=root, capture_output=True, text=True, timeout=5
+    )
+    if out.returncode != 0:
+        return True  # git unavailable/odd state — don't block on infrastructure.
+    return bool(out.stdout.strip())
 
 
 def main() -> int:
@@ -78,22 +139,47 @@ def main() -> int:
         return 0
 
     branch = git(["rev-parse", "--abbrev-ref", "HEAD"], cwd)
-    spec_dir = os.path.join(root, SPECS_DIR, branch)
-    has_spec = os.path.isfile(os.path.join(spec_dir, "requirements.md"))
-    if has_spec:
-        return 0  # spec exists — gate satisfied.
+    spec_name, req_rel = resolve_spec(root, branch)
 
-    reason = (
-        f"SDD gate (Key Rule 1 — spec before code): about to edit '{rel}' but branch "
-        f"'{branch}' has no feature spec at {SPECS_DIR}/{branch}/requirements.md. Write and "
-        f"commit the spec first (/sdd-plan): requirements.md, plan.md, validation.md — "
-        f"and ground any data-dependent decision in a real sample (KR12)."
-    )
+    if spec_name:
+        try:
+            committed = is_committed(root, req_rel)
+        except Exception:
+            committed = True  # fail open on infrastructure errors
+        if committed:
+            return 0  # spec exists and is committed — gate satisfied.
+        reason = (
+            f"SDD gate (Key Rule 4 — commit the spec first): branch '{branch}' has a "
+            f"feature spec at {SPECS_DIR}/{spec_name}/ but requirements.md is not committed. "
+            f"Commit the three spec files (requirements.md, plan.md, validation.md) "
+            f"before touching implementation code."
+        )
+    elif branch in ("main", "master"):
+        reason = (
+            f"SDD gate (Key Rule 1 — spec before code): you're on '{branch}', and SDD "
+            f"implements on a feature branch named after its spec dir "
+            f"({SPECS_DIR}/YYYY-MM-DD-feature/ ↔ branch YYYY-MM-DD-feature). "
+            f"Create the branch + spec first (/sdd-plan). For a genuine hotfix, "
+            f"set SDD_GUARD=warn for this shell."
+        )
+    elif not branch or branch == "HEAD":
+        reason = (
+            f"SDD gate (Key Rule 1 — spec before code): about to edit '{rel}' but HEAD is "
+            f"detached (no branch), so no feature spec can be resolved. Check out the "
+            f"feature branch that matches its {SPECS_DIR}/ dir, or set SDD_GUARD=warn."
+        )
+    else:
+        looked = ", ".join(f"{SPECS_DIR}/{c}/" for c in spec_candidates(branch))
+        reason = (
+            f"SDD gate (Key Rule 1 — spec before code): about to edit '{rel}' but branch "
+            f"'{branch}' has no feature spec (looked in: {looked}). Write and commit the "
+            f"spec first (/sdd-plan): requirements.md, plan.md, validation.md — and ground "
+            f"any data-dependent decision in a real sample (KR12)."
+        )
 
     # Fail closed by DEFAULT. We only reach here when the project already has a
     # Constitution, the edit targets real implementation code, and the branch has
-    # no feature spec — exactly the condition SDD forbids. The kit's point is
-    # enforcement, not advice, so block unless the operator explicitly downgrades.
+    # no committed feature spec — exactly the condition SDD forbids.
     # SDD_GUARD=warn → advisory; SDD_GUARD=off → silent.
     mode = os.environ.get("SDD_GUARD", "block").lower()
     if mode in ("off", "0", "false", "none"):

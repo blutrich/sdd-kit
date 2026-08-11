@@ -16,23 +16,28 @@ Read `config/workflow.json` (the `gates` registry), the feature's
 
 ## Re-check every gate independently (don't trust the validator's word)
 
-1. **`spec_before_code` (KR 1)** — the three feature-spec files exist and were
-   committed *before* the implementation commits. Check git history, not just
-   presence.
-2. **`spec_grounded` (KR 12)** — for every parser/schema/mapping in the diff,
+1. **`spec_before_code` (KR 1)** — the three feature-spec files exist.
+   **`spec_committed` (KR 4)** — and they were committed *before* the
+   implementation commits. Two distinct gates: check git history
+   (`git log --diff-filter=A -- specs/<feature>/`), not just presence.
+2. **`plan_reviewed`** — the spec passed an independent `plan-gap-reviewer`
+   with a PROCEED verdict *before* implementation began. Look for the recorded
+   verdict (in the spec dir, a commit message, or the PR); no record = the
+   most expensive-to-skip gate was skipped — NO-GO.
+3. **`spec_grounded` (KR 12)** — for every parser/schema/mapping in the diff,
    confirm a **committed sample file** exists under `specs/<feature>/samples/`
    with a provenance line (the capture command) in requirements.md, and that the
    test fixtures load or mirror it. A "Real sample" block with no committed file
    behind it fails this gate — demand the artifact, not the prose. Most-faked gate.
-3. **`real_data_done` (KR 13)** — there is at least one test that does **not**
+4. **`real_data_done` (KR 13)** — there is at least one test that does **not**
    mock both ends, and there is captured evidence of one real end-to-end run (the
    actual DB row / event / file inspected). "All unit tests green" is not
    evidence — demand the artifact.
-4. **`failure_unknown_verified`** — each failure/unknown path was forced and
+5. **`failure_unknown_verified`** — each failure/unknown path was forced and
    records `unknown`/`failed`, never collapsed into `ok`/`empty`/`done`/
    `delivered`. Grep the code for defaults (`= true`, `|| []`, `?? 0`,
    `"success"`) that could read a non-event as a fact.
-5. **`noun_by_noun` (KR 11)** — check the **Deliverables** checklist in
+6. **`noun_by_noun` (KR 11)** — check the **Deliverables** checklist in
    requirements.md (each a noun from the phase goal); for each, point to where it
    is delivered, or to the operator's written deferral. If that checklist is
    missing, the spec is incomplete — NO-GO. An unaccounted deliverable is a NO-GO.
@@ -42,7 +47,9 @@ Read `config/workflow.json` (the `gates` registry), the feature's
 ```
 SDD GUARDIAN — <feature> — GO / NO-GO
 
-spec_before_code        ✅ / ❌  <evidence: commit hashes>
+spec_before_code        ✅ / ❌  <evidence: the three files exist>
+spec_committed          ✅ / ❌  <evidence: spec commits predate implementation commits>
+plan_reviewed           ✅ / ❌  <evidence: the recorded PROCEED verdict>
 spec_grounded           ✅ / ❌  <evidence: file:line ↔ cited sample>
 real_data_done          ✅ / ❌  <evidence: the test + the captured artifact>
 failure_unknown_verified ✅ / ❌  <evidence: the forced path + recorded value>

@@ -19,6 +19,15 @@
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/spec_before_code_guard.py\""
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/bash_write_guard.py\""
+          }
+        ]
       }
     ]
   }

@@ -1,18 +1,20 @@
 ---
 name: sdd-key-rules
 description: |
-  The 14 non-negotiable rules of Spec-Driven Development. Consult whenever working under SDD — writing a spec, implementing, reviewing, or claiming a feature done — to check the work against the standing invariants.
+  The 16 non-negotiable rules of Spec-Driven Development. Consult whenever working under SDD — writing a spec, implementing, reviewing, or claiming a feature done — to check the work against the standing invariants.
 
-  Use when about to claim "done", when deciding whether to edit a spec by hand, when writing a parser/schema against an external shape, or when surfacing a decision to the operator.
+  Use when about to claim "done", when deciding whether to edit a spec by hand, when writing a parser/schema against an external shape, when changing a function signature other code calls, or when surfacing a decision to the operator.
 
-  Trigger keywords: key rules, definition of done, is it done, ground in real data, mock, noun-by-noun, spec drift, recommendation.
+  Trigger keywords: key rules, definition of done, is it done, ground in real data, mock, noun-by-noun, spec drift, recommendation, service contract, caller wiring.
 ---
 
 # SDD Key Rules
 
 The standing invariants. They exist because each one names a failure that
 recurs. Don't treat them as ceremony — each prevents a specific, expensive
-mistake. Full rationale: `reference/sdd-playbook-v4.md`.
+mistake. Full rationale: the playbook at `reference/sdd-playbook-v4.md` under
+the kit's install root (find it with `echo "$CLAUDE_PLUGIN_ROOT"`, or look in
+`.claude/skills/sdd-kit/` / `~/.claude/plugins/cache/sdd-kit/sdd-kit/<version>/`).
 
 1. **Write the spec before touching code.** Always.
 2. **Make all changes through the agent, not directly.** Manual edits cause
@@ -40,7 +42,7 @@ mistake. Full rationale: `reference/sdd-playbook-v4.md`.
 12. **Ground data-dependent decisions in real samples.** Before designing a
     parser, schema, or anything that consumes an external shape, look at the
     real shape. A plausible assumption about a format is a guess the agent will
-    encode as fact. See `skills/sdd-grounding-discipline`.
+    encode as fact. See the `sdd-grounding-discipline` skill.
 13. **Prove "done" on real data, not mocks.** Green unit tests that mock both
     ends prove logic, not wiring. For anything that captures, emits, persists,
     or integrates, the bar for "done" is one real run inspected end-to-end.
@@ -54,15 +56,25 @@ mistake. Full rationale: `reference/sdd-playbook-v4.md`.
     description — not a `RECOMMEND:`-prefixed question, not a recommendation
     buried in a non-flagged option. In free prose: a single leading "I recommend
     X because Y."
+15. **Declare service contracts before coding.** Every `requirements.md`
+    carries two explicit lists: *Services I depend on* (functions/interfaces
+    this feature **calls**) and *Services I modify* (functions/interfaces this
+    feature **changes**). When a feature modifies a service another feature
+    depends on, both specs cross-reference each other. A contract not written
+    down is a contract that will be broken silently.
+16. **Verify caller wiring on every signature change.** When a change touches a
+    function's signature, parameters, or injection interface, grep all callers
+    and confirm each is updated — a green compile/typecheck verifies types, not
+    runtime wiring. Record the audit in the PR description: "Callers checked:
+    [files]."
 
-## The two that v4 promoted to hard rules
+## The hard-won ones
 
-Rules **12** and **13** were added after a real build repeatedly shipped
-confidently-wrong code: technical decisions written from a *plausible* mental
-model of an external system instead of its *real* shape, and "done" claimed on
-green tests that mocked both ends. They are the cheapest insurance against the
-most expensive class of bug. When in doubt, look at the real thing, and run it
-once for real.
-
-15. **Declare service contracts before coding.** Every requirements.md must include two explicit lists: "Services I depend on" (functions/interfaces this feature _calls_) and "Services I modify" (functions/interfaces this feature _changes_). If a feature modifies a service another feature depends on, both specs must cross-reference each other. A contract not written down is a contract that will be broken silently.
-16. **Verify caller wiring on every PR that changes a function signature.** When a PR modifies a function's signature, parameters, or dependency injection interface, the author must grep all callers and confirm each is updated. A green TypeScript compile is not sufficient — the compiler verifies types, not runtime dependency injection. Include a caller audit note in the PR description: "Callers checked: [list of files]."
+Rules **12** and **13** were promoted to hard rules in v4 after a real build
+repeatedly shipped confidently-wrong code: technical decisions written from a
+*plausible* mental model of an external system instead of its *real* shape, and
+"done" claimed on green tests that mocked both ends. Rules **15** and **16**
+were added in v5 after the complementary failure: a unit-green change that
+silently broke the wire contract between components. Together they are the
+cheapest insurance against the most expensive classes of bug. When in doubt,
+look at the real thing, run it once for real — and check who calls it.

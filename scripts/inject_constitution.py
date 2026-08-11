@@ -31,14 +31,28 @@ def first_unchecked_phase(roadmap_path: str) -> str | None:
     except OSError:
         return None
     # Find a heading whose section still has an unchecked "- [ ]" deliverable,
-    # or a phase whose Status line isn't ✅.
+    # or a phase whose Status line isn't ✅. Prefer headings that look like
+    # roadmap phases so a stray "- [ ]" in "## Notes" isn't reported as the
+    # next phase; fall back to any heading only if no phase-like heading matches.
     headings = list(re.finditer(r"^##\s+(.*)$", text, re.MULTILINE))
-    for i, h in enumerate(headings):
-        start = h.end()
-        end = headings[i + 1].start() if i + 1 < len(headings) else len(text)
-        body = text[start:end]
-        if "- [ ]" in body or ("Status" in body and "✅" not in body):
-            return h.group(1).strip()
+
+    def unchecked(body: str) -> bool:
+        status_open = bool(re.search(r"^\s*\**Status\**\s*[:*]", body, re.MULTILINE)) and "✅" not in body
+        return "- [ ]" in body or status_open
+
+    phase_like = [h for h in headings if re.match(r"(?i)phase\b|p\d+\b", h.group(1).strip())]
+    for pool in (phase_like, headings):
+        for i, h in enumerate(headings):
+            if h not in pool:
+                continue
+            start = h.end()
+            end = headings[i + 1].start() if i + 1 < len(headings) else len(text)
+            if unchecked(text[start:end]):
+                return h.group(1).strip()
+        if pool is phase_like and phase_like:
+            # Phase-like headings exist but none is unchecked — roadmap is done;
+            # don't fall through and misreport a Notes/Backlog section.
+            return None
     return None
 
 

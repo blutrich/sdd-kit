@@ -6,8 +6,32 @@ All hooks **fail open**: any internal error exits 0 and never breaks your sessio
 
 | Hook | Event | What it does |
 |---|---|---|
-| `inject_constitution.py` | `SessionStart` | If the project has a Constitution (`specs/domain-spec.md`), injects a short pointer to it + the next unchecked roadmap phase, so the agent starts grounded. Silent when there's no Constitution. |
-| `spec_before_code_guard.py` | `PreToolUse` (Edit/Write/MultiEdit) | The "spec before code" gate (Key Rule 1). **Blocks** an edit to *implementation code* on a branch with no `specs/<branch>/requirements.md`. Downgrade with `SDD_GUARD=warn`/`off`. |
+| `inject_constitution.py` | `SessionStart` | If the project has a Constitution (`specs/domain-spec.md`), injects a short pointer to it + the next unchecked roadmap phase (phase-aware — a stray `- [ ]` in a Notes section is ignored), so the agent starts grounded. Silent when there's no Constitution. |
+| `spec_before_code_guard.py` | `PreToolUse` (Edit/Write/MultiEdit) | The "spec before code" gate (Key Rules 1 + 4). **Blocks** an edit to *implementation code* on a branch with no **committed** feature spec. Downgrade with `SDD_GUARD=warn`/`off`. |
+| `bash_write_guard.py` | `PreToolUse` (Bash) | Makes shell writes to code files (heredocs, `>`/`>>`, `tee`, `sed -i`) **visible** when the branch has no committed spec. Deliberately advisory-only — shell parsing is heuristic and must never false-positive-block — but a bypass that announces itself stops being a quiet workaround. |
+
+## How the guard resolves the spec
+
+The branch maps to a spec directory under `specs/` by, in order: the **exact
+branch name**, its **last path segment** (`spec/2026-08-11-thing` finds
+`specs/2026-08-11-thing/`), and the branch **slugified** (`/` → `-`). The
+matched `requirements.md` must also be **committed** (KR 4) — an untracked spec
+file does not open the gate. On `main`/`master` or a detached HEAD the guard
+explains the branch contract instead of failing cryptically.
+
+Test files are exempt via directory segments (`tests/`, `__tests__/`, `e2e/`, …)
+and anchored basename patterns (`test_*`, `*_test.*`, `*.test.*`, `*.spec.*`,
+`conftest.py`) — not a substring match, so `latest.ts` counts as code.
+
+## Verifying the hooks actually loaded
+
+The hooks fail open, so a missing `python3` or a stale plugin cache silently
+disables enforcement. Run **`/sdd-doctor`** (or
+`python3 scripts/sdd_doctor.py`) to check: interpreter, script health,
+plugin-cache freshness, Constitution presence, `SDD_GUARD` mode, and whether
+the current branch resolves to a spec.
+
+The hook scripts have a real test suite: `python3 -m unittest discover -s tests`.
 
 ## Blocking by default, downgrade when you want
 
