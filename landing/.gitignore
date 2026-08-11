@@ -18,3 +18,7 @@ dist
 # Base44
 .app.json*
 .types/
+
+# Vendored Base44 agent docs — regenerable via skills-lock.json (npx skills add)
+.agents
+.claude
