@@ -13,8 +13,9 @@ description: |
 The standing invariants. They exist because each one names a failure that
 recurs. Don't treat them as ceremony — each prevents a specific, expensive
 mistake. Full rationale: the playbook at `reference/sdd-playbook-v4.md` under
-the kit's install root (find it with `echo "$CLAUDE_PLUGIN_ROOT"`, or look in
-`.claude/skills/sdd-kit/` / `~/.claude/plugins/cache/sdd-kit/sdd-kit/<version>/`).
+the kit's install root (Claude Code: `$CLAUDE_PLUGIN_ROOT`, `.claude/skills/sdd-kit/`,
+or `~/.claude/plugins/cache/sdd-kit/sdd-kit/<version>/`; Codex:
+`.agents/skills/sdd-kit/` or `~/.agents/skills/sdd-kit/`).
 
 1. **Write the spec before touching code.** Always.
 2. **Make all changes through the agent, not directly.** Manual edits cause
@@ -51,7 +52,8 @@ the kit's install root (find it with `echo "$CLAUDE_PLUGIN_ROOT"`, or look in
     surface to the operator carries your recommended answer and a brief one-line
     *why* (one clause, not a paragraph). You have read the real code, data, and
     constitution — withholding a recommendation offloads judgment back onto the
-    operator and wastes that context. In a structured tool (`AskUserQuestion`):
+    operator and wastes that context. In a structured question tool (Claude Code's
+`AskUserQuestion`, or whatever your harness offers):
     recommended option **first**, label ends with `(Recommended)`, *why* in its
     description — not a `RECOMMEND:`-prefixed question, not a recommendation
     buried in a non-flagged option. In free prose: a single leading "I recommend

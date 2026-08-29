@@ -9,8 +9,9 @@ Constitution yet — a project that hasn't run /sdd-constitution simply gets no
 context line.
 
 Output protocol: print a JSON object with hookSpecificOutput.additionalContext
-on stdout (the SessionStart contract). Always exit 0 — a context hook must never
-break a session.
+on stdout (the SessionStart contract shared by Claude Code and Codex), or plain
+text when SDD_HOOK_FORMAT=text (for a harness that only reads stdout). Always
+exit 0 — a context hook must never break a session.
 """
 from __future__ import annotations  # str | None hints must not eval on Python <3.10
 
@@ -19,10 +20,23 @@ import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from sdd_harness import context_output_format, project_dir  # noqa: E402
+
 
 def find_project_root() -> str:
-    # CLAUDE_PROJECT_DIR is set by Claude Code; fall back to cwd.
-    return os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    # Hook payload cwd (any harness) → CLAUDE_PROJECT_DIR → cwd.
+    raw = ""
+    if not sys.stdin.isatty():
+        try:
+            raw = sys.stdin.read()
+        except Exception:
+            raw = ""
+    try:
+        payload = json.loads(raw) if raw.strip() else {}
+    except json.JSONDecodeError:
+        payload = {}
+    return project_dir(payload if isinstance(payload, dict) else None)
 
 
 def first_unchecked_phase(roadmap_path: str) -> str | None:
@@ -86,16 +100,12 @@ def main() -> int:
     if nxt:
         lines.append(f"Next roadmap phase: {nxt}")
 
-    print(
-        json.dumps(
-            {
-                "hookSpecificOutput": {
-                    "hookEventName": "SessionStart",
-                    "additionalContext": "\n".join(lines),
-                }
-            }
-        )
-    )
+    context = "\n".join(lines)
+    if context_output_format() == "text":
+        print(context)
+        return 0
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart",
+                                             "additionalContext": context}}))
     return 0
 
 

@@ -64,7 +64,9 @@ confident, wrong assumption about a format nobody actually looked at.
 line — a described "structure" without the captured artifact behind it does not
 pass; that is the exact loophole this rule exists to close. The mechanical half
 is scriptable: run
-`python3 "${CLAUDE_PLUGIN_ROOT}/scripts/check_grounding.py" <feature-dir>`
+`python3 "<kit-root>/scripts/check_grounding.py" <feature-dir>` (kit root: see
+the `sdd-router` skill — `$CLAUDE_PLUGIN_ROOT` in Claude Code,
+`.agents/skills/sdd-kit` in Codex)
 (samples present + provenance + capture date; exit 1 is a hard fail). If the
 feature parses an external format, the test fixtures must load or mirror the
 committed sample. This is the cheapest insurance against the most expensive

@@ -23,7 +23,8 @@ passes its own tests and fails in production. See `skills/sdd-grounding-discipli
 
 ## Interview, then write three files (from templates/)
 Every question you ask carries your recommendation + one-line *why* (Key Rule
-14); recommended option first in `AskUserQuestion`, label ends `(Recommended)`.
+14); recommended option first in the structured question tool (`AskUserQuestion`
+in Claude Code; a single prose question elsewhere), label ends `(Recommended)`.
 
 - `requirements.md` — Scope + explicit **Out of Scope**; Decisions; Success
   Criteria; **Service Contracts** (Key Rules 15–16: "Services I depend on" + "Services I modify" with all callers — declare before coding); **Observability Impact** (a new observable behavior the monitoring

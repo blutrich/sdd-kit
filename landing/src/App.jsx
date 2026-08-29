@@ -155,7 +155,7 @@ export default function App() {
 
       {/* hero */}
       <section className="mx-auto max-w-5xl px-6 pt-20 pb-16 md:pt-28">
-        <p className="kicker rise">A Spec-Driven Development harness for Claude Code</p>
+        <p className="kicker rise">A Spec-Driven Development harness for Claude Code and Codex</p>
         <h1 className="display rise mt-6 text-5xl md:text-7xl" style={{ animationDelay: "0.08s" }}>
           The spec is the brain.
           <br />
@@ -177,7 +177,7 @@ export default function App() {
           <Copyable text="/plugin install sdd-kit@sdd-kit" />
         </div>
         <p className="mt-4 font-mono text-xs text-[color:var(--ink-soft)]">
-          Repo-agnostic · agent-agnostic · plain markdown + Python stdlib · MIT
+          Repo-agnostic · harness-agnostic (Claude Code + Codex) · plain markdown + Python stdlib · MIT
         </p>
       </section>
 
@@ -432,11 +432,11 @@ export default function App() {
         <SectionHead
           num="VII"
           title="Install & first run"
-          sub="A standard Claude Code plugin. Two ways in; five minutes to your first gated feature."
+          sub="One kit, two harnesses. A standard Claude Code plugin, or a Codex skills + hooks layout the installer writes for you. Five minutes to your first gated feature."
         />
-        <div className="grid gap-10 md:grid-cols-2">
+        <div className="grid gap-10 md:grid-cols-3">
           <div>
-            <h3 className="display text-xl">A · Marketplace (all your projects)</h3>
+            <h3 className="display text-xl">A · Claude Code · marketplace</h3>
             <div className="mt-4 space-y-3">
               <Copyable
                 text="claude plugin marketplace add blutrich/sdd-kit && claude plugin install sdd-kit@sdd-kit"
@@ -449,7 +449,7 @@ export default function App() {
             </p>
           </div>
           <div>
-            <h3 className="display text-xl">B · Vendor it (whole team, zero install)</h3>
+            <h3 className="display text-xl">B · Claude Code · vendor it</h3>
             <div className="mt-4">
               <Copyable
                 text="git clone https://github.com/blutrich/sdd-kit .claude/skills/sdd-kit"
@@ -459,6 +459,23 @@ export default function App() {
             <p className="mt-3 leading-relaxed text-[color:var(--ink-soft)]">
               Copied into your repo, Claude Code auto-loads it as a project-scoped plugin for
               everyone who clones — hooks included. No install step.
+            </p>
+          </div>
+          <div>
+            <h3 className="display text-xl">C · Codex · installer</h3>
+            <div className="mt-4 space-y-3">
+              <Copyable
+                text="git clone https://github.com/blutrich/sdd-kit ~/sdd-kit && python3 ~/sdd-kit/scripts/sdd_install.py --harness codex"
+                display="python3 ~/sdd-kit/scripts/sdd_install.py --harness codex"
+              />
+            </div>
+            <p className="mt-3 leading-relaxed text-[color:var(--ink-soft)]">
+              Writes <span className="font-mono text-sm">.agents/skills/</span> (so{" "}
+              <span className="font-mono text-sm">$sdd-plan</span> is{" "}
+              <span className="font-mono text-sm">/sdd-plan</span>),{" "}
+              <span className="font-mono text-sm">.codex/hooks.json</span> with the same three
+              guard scripts, and an AGENTS.md block. Same gates, same specs — switch tools
+              mid-project and nothing moves.
             </p>
           </div>
         </div>

@@ -26,6 +26,14 @@ each cites where the friction actually happened.
 > structure" loophole closed (+ check_grounding.py cited); the router got a
 > kit-root resolution note (**B3 for skills** — agents/commands still have bare
 > paths) and an /sdd-doctor pointer. Still open: B2, B3 (agents/commands), B5, C, D.
+>
+> **Status 2026-08-29 (v0.5.0):** harness-agnostic. Codex now shares the hook
+> contract, so the same three scripts run under both; `scripts/sdd_harness.py`
+> owns every harness-specific name, the guard reads `apply_patch` headers,
+> `sdd_install.py` writes the Codex layout (`.agents/skills`, `.codex/hooks.json`,
+> `AGENTS.md`), and the doctor checks whichever layout it's running in.
+> Fixed on the way: a macOS `/var`→`/private/var` relpath bug that let exempt
+> prefixes be dodged.
 
 ---
 

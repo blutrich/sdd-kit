@@ -14,7 +14,8 @@ the `reviewer` agent do an independent architect-level pass.
    least one test exercises real collaborators** (doesn't mock both ends) (Key
    Rule 13).
 2. **Grounding check** — first run the mechanical half:
-   `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/check_grounding.py" <feature-dir>`
+   `python3 "<kit-root>/scripts/check_grounding.py" <feature-dir>` (kit root:
+`$CLAUDE_PLUGIN_ROOT` in Claude Code, `.agents/skills/sdd-kit` in Codex)
    (verifies `samples/` is non-empty and every sample opens with a provenance
    line + capture date — exit 1 is a hard fail). Then the judgment half: every
    data-dependent decision in requirements.md actually **cites** one of those

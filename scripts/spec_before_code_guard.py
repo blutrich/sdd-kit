@@ -17,7 +17,12 @@ Never touches files outside an implementation path: edits to specs/, docs,
 config, tests, and markdown pass through untouched. Always fails open on any
 internal error — a guard that breaks the editor is worse than no guard.
 
-Input: the PreToolUse JSON on stdin (tool_name, tool_input.file_path, cwd).
+Harness-agnostic: speaks the PreToolUse contract shared by Claude Code and
+Codex. Accepts an editor payload (tool_input.file_path — Edit/Write/MultiEdit)
+or a Codex apply_patch payload (tool_input.patch / .input containing
+`*** Add File:` / `*** Update File:` headers) and checks every touched path.
+
+Input: the PreToolUse JSON on stdin (tool_name, tool_input, cwd).
 Output (block):    {"hookSpecificOutput": {"permissionDecision": "deny",
                     "permissionDecisionReason": "..."}} + exit 0.
 Output (advisory): {"hookSpecificOutput": {"additionalContext": "..."}} + exit 0.
@@ -28,12 +33,16 @@ import re
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from sdd_harness import project_dir  # noqa: E402
+
 # Where specs live, relative to the repo root. Default "specs". Override with
 # SDD_SPECS_DIR to keep specs out of the top level, e.g. SDD_SPECS_DIR=docs/specs.
 SPECS_DIR = (os.environ.get("SDD_SPECS_DIR", "specs") or "specs").strip().strip("/")
 
 # Paths that are NOT implementation code — editing these never needs a spec.
-EXEMPT_PREFIXES = (SPECS_DIR.lower() + "/", "specs/", "docs/", ".agent/", ".claude/", ".github/")
+EXEMPT_PREFIXES = (SPECS_DIR.lower() + "/", "specs/", "docs/", ".agent/", ".agents/",
+                   ".claude/", ".codex/", ".github/")
 EXEMPT_SUFFIXES = (".md", ".json", ".yml", ".yaml", ".toml", ".txt", ".lock")
 EXEMPT_NAMES = ("package.json", "tsconfig.json", "README.md")
 # Only treat these as "implementation code".
@@ -81,6 +90,26 @@ def is_code_path(rel: str) -> bool:
     return low.endswith(CODE_EXTS)
 
 
+# Codex apply_patch payloads carry paths in patch headers, not a file_path field.
+PATCH_HEADER_RE = re.compile(r"^\*\*\* (?:Add|Update|Delete) File: (.+?)\s*$", re.MULTILINE)
+PATCH_MOVE_RE = re.compile(r"^\*\*\* Move to: (.+?)\s*$", re.MULTILINE)
+
+
+def touched_paths(tool_input: dict):
+    """Every file path a tool call is about to write, across harness payload
+    shapes: file_path/filePath (Claude Edit/Write, Codex Edit/Write alias),
+    or the headers of an apply_patch body (Codex)."""
+    single = tool_input.get("file_path") or tool_input.get("filePath")
+    if single:
+        return [single]
+    patch = tool_input.get("patch") or tool_input.get("input") or ""
+    if not isinstance(patch, str) or "*** " not in patch:
+        return []
+    paths = [m.group(1) for m in PATCH_HEADER_RE.finditer(patch)]
+    paths += [m.group(1) for m in PATCH_MOVE_RE.finditer(patch)]
+    return paths
+
+
 def spec_candidates(branch: str):
     """Spec-dir names this branch may map to, most specific first (fixes the
     recurring `spec/<name>` mis-resolution: a slashed branch's last segment or
@@ -124,15 +153,20 @@ def main() -> int:
         return 0
 
     tool_input = data.get("tool_input", {}) or {}
-    fpath = tool_input.get("file_path") or tool_input.get("filePath") or ""
-    cwd = data.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
-    if not fpath:
-        return 0
+    cwd = project_dir(data)
+    root = os.path.realpath(git(["rev-parse", "--show-toplevel"], cwd) or cwd)
 
-    root = git(["rev-parse", "--show-toplevel"], cwd) or cwd
-    rel = os.path.relpath(fpath, root)
-    if not is_code_path(rel):
+    code_rels = []
+    for fpath in touched_paths(tool_input):
+        abs_path = fpath if os.path.isabs(fpath) else os.path.join(cwd, fpath)
+        # realpath both sides: on macOS /var is a symlink to /private/var and a
+        # naive relpath would climb out of the repo and dodge the exempt prefixes.
+        rel = os.path.relpath(os.path.realpath(abs_path), root)
+        if is_code_path(rel):
+            code_rels.append(rel)
+    if not code_rels:
         return 0
+    rel = code_rels[0] + (f" (+{len(code_rels) - 1} more)" if len(code_rels) > 1 else "")
 
     # No Constitution at all → this isn't an SDD project; don't interfere.
     if not os.path.isfile(os.path.join(root, SPECS_DIR, "domain-spec.md")):

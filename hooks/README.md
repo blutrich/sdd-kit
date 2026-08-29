@@ -1,13 +1,15 @@
 # sdd-kit hooks
 
 Deterministic enforcement of the SDD gates — so they fire from the harness, not
-only from agent goodwill. Repo-agnostic and dependency-free (Python 3 stdlib).
-All hooks **fail open**: any internal error exits 0 and never breaks your session.
+only from agent goodwill. Repo-agnostic, **harness-agnostic** (Claude Code and
+Codex speak the same hook contract: JSON on stdin, `hookSpecificOutput` on
+stdout), and dependency-free (Python 3 stdlib). All hooks **fail open**: any
+internal error exits 0 and never breaks your session.
 
 | Hook | Event | What it does |
 |---|---|---|
 | `inject_constitution.py` | `SessionStart` | If the project has a Constitution (`specs/domain-spec.md`), injects a short pointer to it + the next unchecked roadmap phase (phase-aware — a stray `- [ ]` in a Notes section is ignored), so the agent starts grounded. Silent when there's no Constitution. |
-| `spec_before_code_guard.py` | `PreToolUse` (Edit/Write/MultiEdit) | The "spec before code" gate (Key Rules 1 + 4). **Blocks** an edit to *implementation code* on a branch with no **committed** feature spec. Downgrade with `SDD_GUARD=warn`/`off`. |
+| `spec_before_code_guard.py` | `PreToolUse` (Edit/Write/MultiEdit, Codex `apply_patch`) | The "spec before code" gate (Key Rules 1 + 4). **Blocks** an edit to *implementation code* on a branch with no **committed** feature spec. Downgrade with `SDD_GUARD=warn`/`off`. |
 | `bash_write_guard.py` | `PreToolUse` (Bash) | Makes shell writes to code files (heredocs, `>`/`>>`, `tee`, `sed -i`) **visible** when the branch has no committed spec. Deliberately advisory-only — shell parsing is heuristic and must never false-positive-block — but a bypass that announces itself stops being a quiet workaround. |
 
 ## How the guard resolves the spec
@@ -67,7 +69,19 @@ is relative to the repo root. Set it in your project's `.claude/settings.json`
 
 ## How they load
 
-`hooks/hooks.json` is auto-discovered when sdd-kit is installed as a plugin;
-`${CLAUDE_PLUGIN_ROOT}` resolves to the plugin directory. If you've vendored the
-folder instead of installing it, reference the same scripts from your project's
-`.claude/settings.json` `hooks` block.
+**Claude Code:** `hooks/hooks.json` is auto-discovered when sdd-kit is installed
+as a plugin (or vendored at `.claude/skills/sdd-kit/`); `${CLAUDE_PLUGIN_ROOT}`
+resolves to the plugin directory. Otherwise reference the same scripts from your
+project's `.claude/settings.json` `hooks` block.
+
+**Codex:** the same three scripts are wired into `.codex/hooks.json` (project)
+or `~/.codex/hooks.json` (user) by `python3 scripts/sdd_install.py --harness codex`.
+Codex fires `PreToolUse` for `apply_patch` (its edit tool) and `Bash`, and the
+guard reads the file paths straight out of the patch headers. Project-level hooks
+load only once the repo is trusted, and Codex must be restarted after install.
+
+**Any harness:** the scripts never depend on a harness-specific variable. The
+project dir comes from the hook payload's `cwd`; the kit root from
+`SDD_KIT_ROOT` / `CLAUDE_PLUGIN_ROOT` / `PLUGIN_ROOT` / the script's own location
+(`scripts/sdd_harness.py` is the only file that knows those names). Set
+`SDD_HOOK_FORMAT=text` if a harness only reads plain stdout from `SessionStart`.

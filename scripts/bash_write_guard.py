@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from spec_before_code_guard import (  # noqa: E402
     SPECS_DIR, CODE_EXTS, git, is_code_path, resolve_spec, is_committed,
 )
+from sdd_harness import project_dir  # noqa: E402
 
 # Shell constructs that write to a file: >, >>, tee [-a], sed -i, and heredocs
 # piped/redirected to a target. We look for any code-extension path that appears
@@ -56,7 +57,7 @@ def main() -> int:
     if mode in ("off", "0", "false", "none"):
         return 0
 
-    cwd = data.get("cwd") or os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    cwd = project_dir(data)
     root = git(["rev-parse", "--show-toplevel"], cwd) or cwd
 
     # Only relevant in an SDD project.
