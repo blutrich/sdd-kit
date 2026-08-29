@@ -1,6 +1,6 @@
 {
   "name": "sdd-kit",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Machine-readable Spec-Driven Development flow: phases, the agent + model that run each, the artifacts they produce, and the fail-closed gates between them. The sdd-router skill reads this to route; the sdd-guardian agent reads the gates to give a final GO/NO-GO.",
 
   "models": {

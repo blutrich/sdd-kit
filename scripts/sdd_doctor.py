@@ -16,6 +16,9 @@ import re
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from sdd_harness import harness as detect_harness  # noqa: E402
+
 KIT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OK, BAD, WARN = "✅", "❌", "⚠️ "
 
@@ -43,7 +46,8 @@ def main() -> int:
     def warn(label, detail=""):
         print(f"{WARN}{label}" + (f" — {detail}" if detail else ""))
 
-    print("SDD DOCTOR\n==========")
+    hz = detect_harness()
+    print(f"SDD DOCTOR\n==========\nHarness: {hz}  (override with SDD_HARNESS=claude|codex)")
 
     # 1 · Interpreter
     py = sys.version_info
@@ -67,19 +71,40 @@ def main() -> int:
         except Exception as e:
             report(False, f"scripts/{script} broken", str(e))
 
-    # 3 · Stale-cache check (the most common silent failure on real machines)
-    cache_root = os.path.expanduser("~/.claude/plugins/cache/sdd-kit/sdd-kit")
-    if os.path.isdir(cache_root):
-        cached = sorted(os.listdir(cache_root))
-        if cached and not any(v == version for v in cached):
-            report(False, f"installed plugin cache is {'/'.join(cached)} but this kit is v{version}",
-                   "run /plugin update sdd-kit")
-        elif cached:
-            report(True, f"plugin cache matches (v{version})")
-
-    # 4 · Project state
+    # 3 · Per-harness install checks
     specs_rel = (os.environ.get("SDD_SPECS_DIR", "specs") or "specs").strip().strip("/")
     root = git(["rev-parse", "--show-toplevel"], cwd) or cwd
+    if hz != "codex":
+        # Stale Claude plugin cache — the most common silent failure on real machines.
+        cache_root = os.path.expanduser("~/.claude/plugins/cache/sdd-kit/sdd-kit")
+        if os.path.isdir(cache_root):
+            cached = sorted(os.listdir(cache_root))
+            if cached and not any(v == version for v in cached):
+                report(False, f"installed plugin cache is {'/'.join(cached)} but this kit is v{version}",
+                       "run /plugin update sdd-kit")
+            elif cached:
+                report(True, f"plugin cache matches (v{version})")
+    if hz != "claude":
+        # Codex layout: skills discovered under .agents/skills, hooks in .codex/hooks.json
+        found_skills = [d for d in (os.path.join(root, ".agents", "skills"),
+                                    os.path.expanduser("~/.agents/skills"))
+                        if os.path.isfile(os.path.join(d, "sdd-router", "SKILL.md"))]
+        found_hooks = []
+        for hp in (os.path.join(root, ".codex", "hooks.json"), os.path.expanduser("~/.codex/hooks.json")):
+            try:
+                if "spec_before_code_guard" in open(hp, encoding="utf-8").read():
+                    found_hooks.append(hp)
+            except OSError:
+                pass
+        if hz == "codex" or found_skills or found_hooks:
+            report(bool(found_skills), "Codex skills installed ($sdd-router)",
+                   ", ".join(found_skills) if found_skills else
+                   "run: python3 <kit>/scripts/sdd_install.py --harness codex")
+            report(bool(found_hooks), "Codex hooks wired (spec-before-code guard)",
+                   ", ".join(found_hooks) if found_hooks else
+                   "no .codex/hooks.json references the guard — enforcement is OFF under Codex")
+
+    # 4 · Project state
     print(f"\nProject: {root}  (specs dir: {specs_rel}/)")
     domain = os.path.join(root, specs_rel, "domain-spec.md")
     if not os.path.isfile(domain):

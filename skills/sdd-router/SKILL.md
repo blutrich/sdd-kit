@@ -17,9 +17,13 @@ Development cycle, then hand off to that phase's command/agent.
 
 **Locating kit files:** every `reference/…`, `config/…`, and `scripts/…` path in
 this skill lives under the kit's install root, NOT the user's project. Resolve
-it once — `echo "$CLAUDE_PLUGIN_ROOT"`, or failing that the vendored copy at
-`.claude/skills/sdd-kit/` or the newest version under
-`~/.claude/plugins/cache/sdd-kit/sdd-kit/` — and prefix these paths with it.
+it once and prefix these paths with it. Where it is depends on the harness:
+- **Claude Code:** `echo "$CLAUDE_PLUGIN_ROOT"`; failing that the vendored copy
+  at `.claude/skills/sdd-kit/` or the newest version under
+  `~/.claude/plugins/cache/sdd-kit/sdd-kit/`.
+- **Codex:** `.agents/skills/sdd-kit/` in the repo, or `~/.agents/skills/sdd-kit/`
+  (lifecycle commands are skills there: `$sdd-plan` = `/sdd-plan`).
+- **Anything else:** `$SDD_KIT_ROOT`, or wherever the repo was cloned.
 The full method is in `reference/sdd-playbook-v4.md`; the content→file map is
 in `reference/where-does-it-go.md`. Read them when a decision is unclear.
 
@@ -68,7 +72,9 @@ fix is mechanical and reversible, then re-check:
   re-review, continue;
 - spec uncommitted → commit it; failure/unknown path unproven → force it.
 
-**Stop and `AskUserQuestion` ONLY at a one-way door** (the `human_stop_conditions`):
+**Stop and ask the operator ONLY at a one-way door** (use the harness's
+structured question tool — `AskUserQuestion` in Claude Code — or one plain-prose
+question elsewhere) (the `human_stop_conditions`):
 merge / deploy / release; destructive or irreversible ops (delete/drop, force-push,
 prod migration); external side-effects with real-world reach (send a message,
 post publicly, charge money); **dropping a goal noun** (Rule 11 sign-off is itself
@@ -113,14 +119,15 @@ Refuse to advance and say why when:
 
 ## 4. How to ask (when you genuinely must)
 
-In autonomous mode you should reach `AskUserQuestion` rarely — only at a one-way
-door (§2). When you do, the question carries your recommended answer and a
+In autonomous mode you should stop to ask rarely — only at a one-way door
+(§2). When you do, the question carries your recommended answer and a
 one-line *why* (Key Rule 14): put the recommended option **first**, end its label
 with `(Recommended)`, and the *why* in its description — never a neutral menu,
 never a `RECOMMEND:`-prefixed question string.
 
 ## 5. Never bypass
 
-Do not use Claude Code's native plan mode for SDD work — this kit owns planning,
+Do not use the harness's native plan mode (Claude Code plan mode, Codex `/plan`
+or plan-style permission modes) for SDD work — this kit owns planning,
 so the spec artifacts, grounding gate, and validation actually get written. A
 plan that lives only in chat is a plan that drifts.

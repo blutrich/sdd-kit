@@ -177,6 +177,45 @@ class TestGuardModes(RepoCase):
         self.assertEqual(r.stdout.strip(), "")
 
 
+class TestHarnessAgnostic(RepoCase):
+    """Codex speaks the same hook contract with different names: PLUGIN_ROOT,
+    apply_patch payloads, no CLAUDE_PROJECT_DIR."""
+
+    def test_apply_patch_payload_is_gated(self):
+        self.constitution()
+        self.branch("nospec")
+        patch = "*** Begin Patch\n*** Add File: src/app.py\n+print(1)\n*** End Patch\n"
+        out = self.run_guard(None, tool_input={"patch": patch})
+        self.assertEqual(out.get("permissionDecision"), "deny")
+        self.assertIn("src/app.py", out["permissionDecisionReason"])
+
+    def test_apply_patch_docs_only_passes(self):
+        self.constitution()
+        self.branch("nospec")
+        patch = "*** Begin Patch\n*** Update File: README.md\n@@\n+x\n*** End Patch\n"
+        self.assertIsNone(self.run_guard(None, tool_input={"patch": patch}))
+
+    def test_apply_patch_with_spec_passes(self):
+        self.constitution()
+        self.branch("2026-08-29-thing")
+        self.spec("2026-08-29-thing")
+        patch = "*** Begin Patch\n*** Update File: src/app.py\n@@\n+x\n*** End Patch\n"
+        self.assertIsNone(self.run_guard(None, tool_input={"patch": patch}))
+
+    def test_codex_env_and_cwd_only(self):  # no CLAUDE_* vars at all
+        self.constitution()
+        self.branch("nospec")
+        env = {"PLUGIN_ROOT": KIT, "SDD_HARNESS": "codex"}
+        out = self.run_guard("src/app.py", env=env)
+        self.assertEqual(out.get("permissionDecision"), "deny")
+
+    def test_agents_dirs_exempt(self):
+        self.constitution()
+        self.branch("nospec")
+        self.assertIsNone(self.run_guard(".agents/skills/x/scripts/run.py"))
+        self.assertIsNone(self.run_guard(".codex/tool.py"))
+
+
 class TestBashGuard(RepoCase):
     def run_bash(self, command, env=None):
         return self.run_guard(None, env=env, script=BASH_GUARD,
@@ -219,6 +258,60 @@ class TestInjectorRoadmap(unittest.TestCase):
     def test_status_pending_matches(self):
         p = self._roadmap("## Phase 1: A\n**Status:** ⬜ pending\n")
         self.assertEqual(inject_constitution.first_unchecked_phase(p), "Phase 1: A")
+
+
+class TestInjectorOutput(RepoCase):
+    def run_inject(self, env):
+        full = dict(os.environ)
+        for k in ("SDD_HOOK_FORMAT", "CLAUDE_PROJECT_DIR"):
+            full.pop(k, None)
+        full.update(env)
+        r = subprocess.run([sys.executable, os.path.join(SCRIPTS, "inject_constitution.py")],
+                           input=json.dumps({"cwd": self.root}), capture_output=True,
+                           text=True, env=full, timeout=30)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        return r.stdout
+
+    def test_json_by_default_uses_payload_cwd(self):
+        self.constitution()
+        out = json.loads(self.run_inject({}))
+        self.assertIn("Spec-Driven", out["hookSpecificOutput"]["additionalContext"])
+
+    def test_text_mode(self):
+        self.constitution()
+        out = self.run_inject({"SDD_HOOK_FORMAT": "text"})
+        self.assertIn("Spec-Driven", out)
+        self.assertFalse(out.lstrip().startswith("{"))
+
+
+class TestInstaller(RepoCase):
+    def test_codex_project_layout(self):
+        r = subprocess.run([sys.executable, os.path.join(SCRIPTS, "sdd_install.py"),
+                            "--harness", "codex", "--project", self.root],
+                           capture_output=True, text=True, timeout=60)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        skills = os.path.join(self.root, ".agents", "skills")
+        for name in ("sdd-router", "sdd-key-rules", "sdd-plan", "sdd-doctor", "sdd-kit"):
+            self.assertTrue(os.path.isfile(os.path.join(skills, name, "SKILL.md")), name)
+        self.assertTrue(os.path.isfile(os.path.join(skills, "sdd-kit", "scripts", "spec_before_code_guard.py")))
+        hooks = json.load(open(os.path.join(self.root, ".codex", "hooks.json")))
+        self.assertIn("apply_patch", hooks["hooks"]["PreToolUse"][0]["matcher"])
+        agents = open(os.path.join(self.root, "AGENTS.md")).read()
+        self.assertIn("$sdd-router", agents)
+        # idempotent: second run does not duplicate the AGENTS.md block or hooks
+        subprocess.run([sys.executable, os.path.join(SCRIPTS, "sdd_install.py"),
+                        "--harness", "codex", "--project", self.root], check=True, capture_output=True)
+        self.assertEqual(open(os.path.join(self.root, "AGENTS.md")).read().count("sdd-kit:start"), 1)
+        hooks = json.load(open(os.path.join(self.root, ".codex", "hooks.json")))
+        self.assertEqual(len(hooks["hooks"]["PreToolUse"]), 2)
+
+    def test_claude_project_layout(self):
+        r = subprocess.run([sys.executable, os.path.join(SCRIPTS, "sdd_install.py"),
+                            "--harness", "claude", "--project", self.root],
+                           capture_output=True, text=True, timeout=60)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue(os.path.isfile(os.path.join(
+            self.root, ".claude", "skills", "sdd-kit", ".claude-plugin", "plugin.json")))
 
 
 class TestGrounding(unittest.TestCase):

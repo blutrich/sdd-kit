@@ -13,12 +13,14 @@ nothing. This command makes that state visible.
 ## Run
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sdd_doctor.py" "$PWD"
+python3 "<kit-root>/scripts/sdd_doctor.py" "$PWD"
 ```
 
-(If `CLAUDE_PLUGIN_ROOT` is not set in your context, locate the kit first: the
-vendored copy at `.claude/skills/sdd-kit/`, or the marketplace cache under
-`~/.claude/plugins/cache/sdd-kit/sdd-kit/<version>/`.)
+Kit root by harness — Claude Code: `$CLAUDE_PLUGIN_ROOT`, else the vendored
+`.claude/skills/sdd-kit/`, else `~/.claude/plugins/cache/sdd-kit/sdd-kit/<version>/`.
+Codex: `.agents/skills/sdd-kit/` or `~/.agents/skills/sdd-kit/`. The doctor
+detects the harness itself (`SDD_HARNESS=claude|codex` to force) and checks the
+matching install layout.
 
 ## Report
 
@@ -27,7 +29,9 @@ then, for each ❌ line, state the one-line fix:
 
 - **python3 missing / too old** → install Python ≥ 3.9 on PATH.
 - **script broken** → the kit copy is corrupted; reinstall or re-pull.
-- **stale plugin cache** → `/plugin update sdd-kit`.
+- **stale plugin cache** (Claude Code) → `/plugin update sdd-kit`.
+- **Codex skills / hooks missing** → `python3 <kit>/scripts/sdd_install.py --harness codex`
+  from the project root, then restart Codex and trust the repo.
 - **no Constitution** → the kit is inert here; run `/sdd-constitution`.
 - **branch resolves to no spec** → run `/sdd-plan`, or rename the branch to
   match its spec dir (flat `YYYY-MM-DD-feature` names).

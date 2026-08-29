@@ -1,7 +1,7 @@
 {
   "name": "sdd-kit",
-  "version": "0.4.0",
-  "description": "Repo-agnostic Spec-Driven Development harness: a Constitution + per-feature Plan/Implement/Validate/Replan loop with grounding and observability discipline. Write structured specs before the agent writes code; ground every data-dependent decision in real samples; prove 'done' on real data, not mocks.",
+  "version": "0.5.0",
+  "description": "Repo-agnostic, harness-agnostic (Claude Code + Codex) Spec-Driven Development harness: a Constitution + per-feature Plan/Implement/Validate/Replan loop with grounding and observability discipline. Write structured specs before the agent writes code; ground every data-dependent decision in real samples; prove 'done' on real data, not mocks.",
   "author": {
     "name": "Ofer Blutrich & Tsahi (Isaac Zeevi)"
   },
@@ -17,6 +17,7 @@
     "observability",
     "verification",
     "agent-agnostic",
-    "claude-code"
+    "claude-code",
+    "codex"
   ]
 }

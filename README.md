@@ -1,6 +1,6 @@
 # sdd-kit
 
-**A repo-agnostic, agent-agnostic Spec-Driven Development harness for Claude Code.**
+**A repo-agnostic, harness-agnostic Spec-Driven Development harness — runs under Claude Code and OpenAI Codex.**
 
 Write structured markdown **specs before the agent writes a line of code**. The
 spec is the brain; the agent is the muscle. Your job shifts from typing code to
@@ -13,7 +13,7 @@ you what it *intends*; only the data tells you what is *true*.
 And when a gate isn't met, the kit doesn't advise — **it refuses**.
 
 > **Landing page:** https://sdd-kit-landing-7ffdd269.base44.app
-> **Repo:** https://github.com/blutrich/sdd-kit · MIT · current version **0.3.0**
+> **Repo:** https://github.com/blutrich/sdd-kit · MIT · current version **0.5.0**
 >
 > Structure mimics [cc10x](https://github.com/romiluz13/cc10x): a **router** skill
 > is the brain, **agents** are phase specialists, **commands** are the lifecycle,
@@ -25,6 +25,7 @@ And when a gate isn't met, the kit doesn't advise — **it refuses**.
 ## Contents
 
 - [Install (30 seconds)](#install-30-seconds)
+- [Harness support: Claude Code & Codex](#harness-support-claude-code--codex)
 - [Your first cycle (10 minutes)](#your-first-cycle-10-minutes)
 - [The SDD cycle](#the-sdd-cycle)
 - [How the router decides](#how-the-router-decides)
@@ -45,6 +46,8 @@ And when a gate isn't met, the kit doesn't advise — **it refuses**.
 ---
 
 ## Install (30 seconds)
+
+### Claude Code
 
 In a terminal:
 
@@ -74,9 +77,54 @@ session, after you trust the workspace. No install step, hooks included.
 > it would sit inert. Use `.claude/skills/<name>/` (project scope) or
 > `~/.claude/skills/<name>/` (personal scope, loads in every project).
 
+### Codex (OpenAI)
+
+Clone once, then let the installer lay the kit out the way Codex discovers it:
+
+```bash
+git clone https://github.com/blutrich/sdd-kit ~/sdd-kit
+cd your-project
+python3 ~/sdd-kit/scripts/sdd_install.py --harness codex        # project scope (commit the result)
+# or:  --scope user   → ~/.agents/skills + ~/.codex/hooks.json for every project
+```
+
+That writes `.agents/skills/sdd-*/` (the router + rules skills, plus one skill
+per lifecycle command so `$sdd-plan` is `/sdd-plan`), `.agents/skills/sdd-kit/`
+(the kit root: playbook, templates, agent roles, scripts), `.codex/hooks.json`
+(the same three hook scripts — Codex fires `PreToolUse` on `apply_patch` and
+`Bash` with the same JSON contract), and an idempotent block in `AGENTS.md`.
+Restart Codex and trust the repo; then `$sdd-router` / `$sdd-constitution`.
+
+`--harness both` (the default) lays out both harnesses side by side, so one
+repo can be worked by teammates on either tool. `--link` symlinks instead of
+copying for kit development.
+
 **Note:** the kit is deliberately **inert** until a Constitution exists. If you
 install it and nothing changes, that's correct — run `/sdd-kit:sdd-constitution`
 to switch it on. The hooks require `python3` on PATH (macOS/Linux).
+
+---
+
+## Harness support: Claude Code & Codex
+
+The kit is one set of plain-markdown files plus three stdlib Python hook
+scripts. Nothing in the method is tool-specific; only the *discovery layout*
+differs, and `scripts/sdd_install.py` writes it for you.
+
+| | Claude Code | Codex |
+|---|---|---|
+| Install | `/plugin install sdd-kit@sdd-kit`, or vendor at `.claude/skills/sdd-kit/` | `sdd_install.py --harness codex` → `.agents/skills/` |
+| Entry point | `sdd-router` skill auto-triggers; `/sdd-kit:sdd-plan` … | `$sdd-router`; `$sdd-plan` … (commands become skills) |
+| Agents | `agents/*.md` spawn as subagents via `Task` | roles adopted in a fresh pass, or spawned if the harness supports subagents |
+| Hooks | `hooks/hooks.json`, auto-loaded | `.codex/hooks.json`, same schema and same scripts |
+| Edit gate fires on | `Edit` / `Write` / `MultiEdit` | `apply_patch` (paths read from the patch headers) |
+| Session context | `SessionStart` hook | `SessionStart` hook + `AGENTS.md` block |
+| Kit root | `$CLAUDE_PLUGIN_ROOT` | `.agents/skills/sdd-kit/` (`$PLUGIN_ROOT` when packaged) |
+| Health check | `/sdd-doctor` | `$sdd-doctor` — detects the harness, checks its layout |
+
+Env knobs (`SDD_GUARD`, `SDD_SPECS_DIR`, `SDD_KIT_ROOT`, `SDD_HARNESS`,
+`SDD_HOOK_FORMAT`) are identical on both. Your specs, constitution, and samples
+are plain markdown either way — switch tools mid-project and nothing moves.
 
 ---
 
@@ -341,7 +389,7 @@ Constitution pointer injected into context: which of the three files exist, the
 non-SDD projects. This is how a fresh session always knows where the project
 agreement lives and what's next — no re-explaining.
 
-### `PreToolUse` (Edit|Write|MultiEdit) → `spec_before_code_guard.py`
+### `PreToolUse` (Edit|Write|MultiEdit, Codex `apply_patch`) → `spec_before_code_guard.py`
 
 Once a project has a Constitution, editing **implementation code** on a branch
 with no **committed** feature spec is **denied** (Key Rules 1 + 4) — the kit
@@ -380,8 +428,8 @@ presence, `SDD_GUARD` mode, and whether your current branch resolves to a
 spec — one ❌ line per problem, with the fix. The hook scripts also ship a real
 test suite: `python3 -m unittest discover -s tests`.
 
-Modes, via the `SDD_GUARD` env var (set in the shell that launches Claude Code,
-or in `.claude/settings.json` → `env`):
+Modes, via the `SDD_GUARD` env var (set in the shell that launches your agent,
+or in `.claude/settings.json` → `env` for Claude Code):
 
 | `SDD_GUARD` | Behavior |
 |---|---|
@@ -420,7 +468,7 @@ with you.
 ```
 sdd-kit/
 ├── .claude-plugin/
-│   ├── plugin.json                 # plugin manifest (identity, v0.3.0)
+│   ├── plugin.json                 # plugin manifest (identity, v0.5.0)
 │   └── marketplace.json            # marketplace manifest (install as sdd-kit@sdd-kit)
 ├── config/
 │   └── workflow.json               # machine-readable flow: phases, agents, models, GATES, automation
@@ -436,14 +484,16 @@ sdd-kit/
 ├── commands/                       # the lifecycle: /sdd-constitution … /sdd-replan, /sdd-doctor
 │   └── sdd-{constitution,plan,implement,validate,replan,doctor}.md
 ├── hooks/                          # deterministic gate enforcement
-│   ├── hooks.json                  #   SessionStart context + PreToolUse guards (Edit/Write + Bash)
+│   ├── hooks.json                  #   SessionStart context + PreToolUse guards (Edit/Write/apply_patch + Bash)
 │   └── README.md
 ├── scripts/                        # hook implementations (Python stdlib, no deps)
 │   ├── inject_constitution.py
 │   ├── spec_before_code_guard.py
 │   ├── bash_write_guard.py         #   advisory visibility for shell writes to code
 │   ├── check_grounding.py          #   mechanical half of the spec_grounded gate (KR12)
-│   └── sdd_doctor.py               #   /sdd-doctor implementation
+│   ├── sdd_doctor.py               #   /sdd-doctor implementation (harness-aware)
+│   ├── sdd_harness.py              #   the ONLY file that knows CLAUDE_*/PLUGIN_ROOT names
+│   └── sdd_install.py              #   lays the kit out for Claude Code, Codex, or both
 ├── tests/
 │   └── test_hooks.py               # real-git-repo tests for the hook scripts
 ├── skills/                         # durable rules + the brain
@@ -470,9 +520,12 @@ sdd-kit/
 | `SDD_SPECS_DIR` | env | `specs` | move specs out of the top level, e.g. `docs/specs` — hooks, commands, and router all resolve it, so creation and enforcement stay in sync |
 | `automation.mode` | `config/workflow.json` | `autonomous` | auto-chain the cycle; stop only at one-way doors. Change it for phase-by-phase approval |
 | per-agent `model` | `agents/*.md` frontmatter | opus/sonnet | override per project — SDD is model-agnostic |
+| `SDD_HARNESS` | env | auto-detect | force `claude` / `codex` / `generic` for the doctor and hooks |
+| `SDD_KIT_ROOT` | env | auto | explicit kit location when neither harness variable is set |
+| `SDD_HOOK_FORMAT` | env | `json` | `text` for a harness that only reads plain stdout from `SessionStart` |
 
-Set env vars in the shell that launches Claude Code, or per-project in
-`.claude/settings.json` under `"env"`.
+Set env vars in the shell that launches your agent, or per-project in
+`.claude/settings.json` under `"env"` (Claude Code).
 
 ---
 
@@ -496,8 +549,11 @@ install is healthy either way: `/sdd-doctor`.
 
 **"The hooks don't fire at all."** Run `/sdd-doctor` — it checks the usual
 suspects in one pass: `python3` on PATH, broken scripts, and a **stale plugin
-cache** (the most common cause; fix with `/plugin update sdd-kit`). The hooks
-*fail open* by design, so any of those looks like silent non-enforcement.
+cache** (the most common cause under Claude Code; fix with `/plugin update sdd-kit`).
+Under Codex it checks that `.agents/skills/sdd-router` exists and that a
+`.codex/hooks.json` references the guard; remember project hooks load only in a
+**trusted** repo and only after a restart. The hooks *fail open* by design, so
+any of those looks like silent non-enforcement.
 
 **"Tests are getting blocked."** They shouldn't be: files under `tests/`,
 `__tests__/`, `e2e/` and basenames matching `test_*`, `*_test.*`, `*.test.*`,
