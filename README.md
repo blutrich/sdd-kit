@@ -12,7 +12,7 @@ you what it *intends*; only the data tells you what is *true*.
 
 And when a gate isn't met, the kit doesn't advise — **it refuses**.
 
-> **Landing page:** https://sdd-kit-landing-7ffdd269.base44.app
+> **Landing page:** https://sdd-kit.base44.app
 > **Repo:** https://github.com/blutrich/sdd-kit · MIT · current version **0.5.0**
 >
 > Structure mimics [cc10x](https://github.com/romiluz13/cc10x): a **router** skill
