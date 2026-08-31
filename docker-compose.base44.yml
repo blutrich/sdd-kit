@@ -1,0 +1,12 @@
+services:
+  web:
+    image: node:22
+    working_dir: /app/landing
+    volumes:
+      - .:/app
+    ports:
+      - "3000:5173"
+    environment:
+      - NODE_ENV=development
+    command: >
+      sh -c "npm install && npx vite --host 0.0.0.0 --port 5173"
